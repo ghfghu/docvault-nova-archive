@@ -42,6 +42,16 @@ const viewingTags = [
   'Confidential'
 ];
 
+// Extended interface for MediaTrackCapabilities to include torch
+interface ExtendedMediaTrackCapabilities extends MediaTrackCapabilities {
+  torch?: boolean;
+}
+
+// Extended interface for MediaTrackConstraints to include torch
+interface ExtendedMediaTrackConstraintSet {
+  torch?: boolean;
+}
+
 const ScanDocument = () => {
   const navigate = useNavigate();
   const { addDocument } = useData();
@@ -51,6 +61,7 @@ const ScanDocument = () => {
   const [images, setImages] = useState<string[]>([]);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [flashSupported, setFlashSupported] = useState(false);
   
   // Form state
   const [name, setName] = useState('');
@@ -78,6 +89,11 @@ const ScanDocument = () => {
         videoRef.current.srcObject = mediaStream;
       }
       
+      // Check if torch is supported
+      const videoTrack = mediaStream.getVideoTracks()[0];
+      const capabilities = videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
+      
+      setFlashSupported(!!capabilities.torch);
       setStream(mediaStream);
       setCameraActive(true);
     } catch (error) {
@@ -96,13 +112,15 @@ const ScanDocument = () => {
     
     try {
       const videoTrack = stream.getVideoTracks()[0];
-      const capabilities = videoTrack.getCapabilities();
+      const capabilities = videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
       
       // Check if torch is supported
       if (capabilities.torch) {
-        await videoTrack.applyConstraints({
-          advanced: [{ torch: !flashEnabled }]
-        });
+        const constraints = {
+          advanced: [{ torch: !flashEnabled } as ExtendedMediaTrackConstraintSet]
+        };
+        
+        await videoTrack.applyConstraints(constraints);
         setFlashEnabled(!flashEnabled);
       } else {
         toast({
@@ -249,24 +267,26 @@ const ScanDocument = () => {
                 {/* Camera controls */}
                 {cameraActive && (
                   <div className="flex items-center justify-center space-x-4">
-                    <Button 
-                      type="button" 
-                      onClick={toggleFlash}
-                      variant="outline"
-                      className="border-docvault-accent/30"
-                    >
-                      {flashEnabled ? (
-                        <>
-                          <ZapOff className="mr-2" size={18} />
-                          Disable Flash
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="mr-2" size={18} />
-                          Enable Flash
-                        </>
-                      )}
-                    </Button>
+                    {flashSupported && (
+                      <Button 
+                        type="button" 
+                        onClick={toggleFlash}
+                        variant="outline"
+                        className="border-docvault-accent/30"
+                      >
+                        {flashEnabled ? (
+                          <>
+                            <ZapOff className="mr-2" size={18} />
+                            Disable Flash
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="mr-2" size={18} />
+                            Enable Flash
+                          </>
+                        )}
+                      </Button>
+                    )}
                     
                     <Button 
                       type="button" 
