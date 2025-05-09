@@ -3,7 +3,11 @@ import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, RotateCw, X, Zap, ZapOff, Plus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { ExtendedMediaTrackCapabilities, MediaTrackConstraintsWithTorch } from '@/types/camera';
+import { 
+  ExtendedMediaTrackCapabilities, 
+  MediaTrackConstraintsWithTorch, 
+  ExtendedMediaTrackConstraintSet 
+} from '@/types/camera';
 
 interface CameraCaptureProps {
   images: string[];
@@ -63,9 +67,10 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
       
       // Check if torch is supported
       if (capabilities.torch) {
+        const torchConstraint: ExtendedMediaTrackConstraintSet = { torch: !flashEnabled };
         // Create constraint object
         const constraints: MediaTrackConstraintsWithTorch = {
-          advanced: [{ torch: !flashEnabled }]
+          advanced: [torchConstraint]
         };
         
         await videoTrack.applyConstraints(constraints);

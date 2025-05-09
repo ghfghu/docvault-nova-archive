@@ -4,11 +4,14 @@ export interface ExtendedMediaTrackCapabilities extends MediaTrackCapabilities {
   torch?: boolean;
 }
 
+// Extended interface for MediaTrackConstraintSet to include torch
+export interface ExtendedMediaTrackConstraintSet extends MediaTrackConstraintSet {
+  torch?: boolean;
+}
+
 // Extended interface for MediaTrackConstraints to include torch
 export interface MediaTrackConstraintsWithTorch extends MediaTrackConstraints {
-  advanced?: {
-    torch?: boolean;
-  }[];
+  advanced?: ExtendedMediaTrackConstraintSet[];
 }
 
 // Document types
