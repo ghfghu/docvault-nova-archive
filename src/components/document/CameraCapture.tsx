@@ -1,8 +1,9 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, RotateCw, X, Zap, ZapOff, Plus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
   ExtendedMediaTrackCapabilities, 
   MediaTrackConstraintsWithTorch, 
@@ -21,10 +22,31 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [flashSupported, setFlashSupported] = useState(false);
+  const { t } = useLanguage();
+
+  // Initialize camera when component mounts
+  useEffect(() => {
+    // If camera should be active, but stream is not set, start camera
+    if (cameraActive && !stream) {
+      startCamera();
+    }
+    
+    // Cleanup: stop camera when component unmounts
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraActive, stream]);
 
   // Initialize camera
   const startCamera = async () => {
     try {
+      // Stop any existing streams first
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
       const constraints = {
         video: {
           facingMode: 'environment',
@@ -50,8 +72,8 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast({
-        title: "Camera Error",
-        description: "Could not access your camera. Please check permissions.",
+        title: t('cameraError'),
+        description: t('cameraPermissionError'),
         variant: "destructive"
       });
     }
@@ -77,8 +99,8 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
         setFlashEnabled(!flashEnabled);
       } else {
         toast({
-          title: "Flash not supported",
-          description: "Your device camera does not support flash control",
+          title: t('flashNotSupported'),
+          description: t('deviceNoFlash'),
           variant: "destructive"
         });
       }
@@ -107,12 +129,12 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
         setImages([...images, imageDataUrl]);
         
         toast({
-          title: "Image captured",
-          description: `${images.length + 1} of 2 images captured`
+          title: t('imageCaptured'),
+          description: `${images.length + 1} ${t('ofImages')}`
         });
       }
     }
-  }, [images, setImages]);
+  }, [images, setImages, t]);
   
   // Stop camera
   const stopCamera = () => {
@@ -154,7 +176,7 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
               className="bg-docvault-accent hover:bg-docvault-accent/80"
             >
               <Camera className="mr-2" size={18} />
-              Start Camera
+              {t('startCamera')}
             </Button>
           </div>
         )}
@@ -176,12 +198,12 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
               {flashEnabled ? (
                 <>
                   <ZapOff className="mr-2" size={18} />
-                  Disable Flash
+                  {t('disableFlash')}
                 </>
               ) : (
                 <>
                   <Zap className="mr-2" size={18} />
-                  Enable Flash
+                  {t('enableFlash')}
                 </>
               )}
             </Button>
@@ -193,7 +215,7 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
             className="bg-docvault-accent hover:bg-docvault-accent/80"
           >
             <Camera className="mr-2" size={18} />
-            Capture
+            {t('capture')}
           </Button>
           
           <Button 
@@ -237,7 +259,7 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
               >
                 <div className="flex flex-col items-center">
                   <Plus size={24} className="text-docvault-accent mb-1" />
-                  <span className="text-xs">Add another image</span>
+                  <span className="text-xs">{t('addAnotherImage')}</span>
                 </div>
               </div>
             )}

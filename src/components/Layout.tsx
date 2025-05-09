@@ -2,6 +2,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import Navbar from './Navbar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const { isAuthenticated, appPassword } = useAuth();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -43,7 +45,7 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {isAuthenticated && <Navbar />}
       
       <main className="flex-1 p-4 md:p-6 container">

@@ -1,25 +1,29 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSelector from '@/components/LanguageSelector';
 
 const Index = () => {
   const navigate = useNavigate();
   const { login, register, isAuthenticated } = useAuth();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   // If already authenticated, redirect to dashboard
-  if (isAuthenticated) {
-    navigate('/dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,32 +52,39 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
+          <div className="absolute top-0 right-0">
+            <LanguageSelector />
+          </div>
           <h1 className="text-4xl font-bold text-gradient mb-2">
-            Doc<span className="text-docvault-accent">Vault</span>
+            {language === 'en' ? (
+              <>Doc<span className="text-docvault-accent">Vault</span></>
+            ) : (
+              <>{t('appName')}</>
+            )}
           </h1>
-          <p className="text-docvault-gray text-sm">Secure Document Archiving</p>
+          <p className="text-docvault-gray text-sm">{t('tagline')}</p>
         </div>
 
         <Card className="glass-card">
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 bg-docvault-dark">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Create Account</TabsTrigger>
+              <TabsTrigger value="login">{t('signIn')}</TabsTrigger>
+              <TabsTrigger value="register">{t('createAccount')}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
               <form onSubmit={handleLogin}>
                 <CardHeader>
-                  <CardTitle>Welcome Back</CardTitle>
-                  <CardDescription>Enter your credentials to continue</CardDescription>
+                  <CardTitle>{t('welcomeBack')}</CardTitle>
+                  <CardDescription>{t('enterCredentials')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Input
-                      placeholder="Username"
+                      placeholder={t('username')}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       className="bg-docvault-dark/50 border-docvault-accent/30"
@@ -83,7 +94,7 @@ const Index = () => {
                   <div className="space-y-2">
                     <Input
                       type="password"
-                      placeholder="Password"
+                      placeholder={t('password')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="bg-docvault-dark/50 border-docvault-accent/30"
@@ -97,7 +108,7 @@ const Index = () => {
                     className="w-full bg-docvault-accent hover:bg-docvault-accent/80"
                     disabled={loading}
                   >
-                    {loading ? 'Signing in...' : 'Sign In'}
+                    {loading ? t('signingIn') : t('signIn')}
                   </Button>
                 </CardFooter>
               </form>
@@ -106,13 +117,13 @@ const Index = () => {
             <TabsContent value="register">
               <form onSubmit={handleRegister}>
                 <CardHeader>
-                  <CardTitle>Create Account</CardTitle>
-                  <CardDescription>Create a new account to get started</CardDescription>
+                  <CardTitle>{t('createAccount')}</CardTitle>
+                  <CardDescription>{t('createNewAccount')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Input
-                      placeholder="Choose Username"
+                      placeholder={t('chooseUsername')}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       className="bg-docvault-dark/50 border-docvault-accent/30"
@@ -122,7 +133,7 @@ const Index = () => {
                   <div className="space-y-2">
                     <Input
                       type="password"
-                      placeholder="Create Password"
+                      placeholder={t('createPassword')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="bg-docvault-dark/50 border-docvault-accent/30"
@@ -136,7 +147,7 @@ const Index = () => {
                     className="w-full bg-docvault-accent hover:bg-docvault-accent/80"
                     disabled={loading}
                   >
-                    {loading ? 'Creating account...' : 'Create Account'}
+                    {loading ? t('creatingAccount') : t('createAccount')}
                   </Button>
                 </CardFooter>
               </form>
@@ -145,8 +156,8 @@ const Index = () => {
         </Card>
         
         <div className="mt-8 text-center text-docvault-gray text-xs">
-          <p>DocVault - Secure Document Archiving</p>
-          <p className="mt-1">All data is stored securely on your device</p>
+          <p>{t('appInfo')}</p>
+          <p className="mt-1">{t('dataStorage')}</p>
         </div>
       </div>
     </div>

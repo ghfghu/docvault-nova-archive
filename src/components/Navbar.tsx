@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
+import LanguageSelector from '@/components/LanguageSelector';
 import { 
   Menu, 
   LayoutDashboard, 
@@ -25,28 +27,33 @@ import {
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { t, language } = useLanguage();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const navItems = [
-    { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Scan', path: '/scan', icon: Camera },
-    { name: 'Documents', path: '/documents', icon: Files },
-    { name: 'Wanted', path: '/wanted', icon: Users },
-    { name: 'Reports', path: '/reports', icon: BarChart3 },
-    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: t('home'), path: '/dashboard', icon: LayoutDashboard },
+    { name: t('scan'), path: '/scan', icon: Camera },
+    { name: t('documents'), path: '/documents', icon: Files },
+    { name: t('wanted'), path: '/wanted', icon: Users },
+    { name: t('reports'), path: '/reports', icon: BarChart3 },
+    { name: t('settings'), path: '/settings', icon: Settings },
   ];
   
   const isActive = (path: string) => location.pathname === path;
   
   return (
-    <nav className="bg-docvault-dark/80 sticky top-0 z-50 backdrop-blur-lg border-b border-docvault-accent/10">
+    <nav className="bg-docvault-dark/80 sticky top-0 z-50 backdrop-blur-lg border-b border-docvault-accent/10" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center space-x-2">
             <span className="text-lg font-bold glow-effect">
-              Doc<span className="text-docvault-accent">Vault</span>
+              {language === 'en' ? (
+                <>Doc<span className="text-docvault-accent">Vault</span></>
+              ) : (
+                <>{t('appName')}</>
+              )}
             </span>
           </Link>
           
@@ -67,6 +74,7 @@ const Navbar = () => {
                 </Button>
               </Link>
             ))}
+            <LanguageSelector />
           </div>
           
           {/* User Menu */}
@@ -79,7 +87,7 @@ const Navbar = () => {
             <DropdownMenuContent className="glass-card w-56" align="end">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <span className="text-sm font-normal opacity-75">Signed in as</span>
+                  <span className="text-sm font-normal opacity-75">{t('signIn')}</span>
                   <span className="font-medium text-docvault-accent">{user?.username}</span>
                 </div>
               </DropdownMenuLabel>
@@ -87,12 +95,12 @@ const Navbar = () => {
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="cursor-pointer">
                   <Settings size={16} className="mr-2" />
-                  <span>Settings</span>
+                  <span>{t('settings')}</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-400">
                 <LogOut size={16} className="mr-2" />
-                <span>Log out</span>
+                <span>{t('signIn')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -126,6 +134,10 @@ const Navbar = () => {
                   </div>
                 </Link>
               ))}
+              <div className="flex flex-col items-center p-2 rounded hover:bg-docvault-accent/10">
+                <LanguageSelector />
+                <span className="text-xs mt-1">{t('language')}</span>
+              </div>
             </div>
           </div>
         )}

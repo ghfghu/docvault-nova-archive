@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useLanguage } from '@/context/LanguageContext';
 import { documentTypes, viewingTags, DocumentData } from '@/types/camera';
 
 interface DocumentFormProps {
@@ -35,16 +36,18 @@ const DocumentForm = ({
   notes, setNotes,
   viewingTag, setViewingTag
 }: DocumentFormProps) => {
+  const { t } = useLanguage();
+  
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4">
         <div>
-          <Label htmlFor="name">Document Name</Label>
+          <Label htmlFor="name">{t('documentName')}</Label>
           <Input
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Enter document name"
+            placeholder={t('enterDocumentName')}
             className="bg-docvault-dark/50 border-docvault-accent/30"
             required
           />
@@ -52,7 +55,7 @@ const DocumentForm = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="date">Date</Label>
+            <Label htmlFor="date">{t('date')}</Label>
             <Input
               id="date"
               type="date"
@@ -64,10 +67,10 @@ const DocumentForm = ({
           </div>
           
           <div>
-            <Label htmlFor="docType">Document Type</Label>
+            <Label htmlFor="docType">{t('documentType')}</Label>
             <Select value={docType} onValueChange={setDocType}>
               <SelectTrigger className="bg-docvault-dark/50 border-docvault-accent/30">
-                <SelectValue placeholder="Select type" />
+                <SelectValue placeholder={t('selectType')} />
               </SelectTrigger>
               <SelectContent>
                 {documentTypes.map((type) => (
@@ -82,7 +85,7 @@ const DocumentForm = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="priority">Priority (1-10)</Label>
+            <Label htmlFor="priority">{t('priority')}</Label>
             <div className="flex items-center space-x-2">
               <Input
                 id="priority"
@@ -104,10 +107,10 @@ const DocumentForm = ({
           </div>
           
           <div>
-            <Label htmlFor="viewingTag">Viewing Tag (Optional)</Label>
+            <Label htmlFor="viewingTag">{t('viewingTag')}</Label>
             <Select value={viewingTag} onValueChange={setViewingTag}>
               <SelectTrigger className="bg-docvault-dark/50 border-docvault-accent/30">
-                <SelectValue placeholder="Select tag" />
+                <SelectValue placeholder={t('selectTag')} />
               </SelectTrigger>
               <SelectContent>
                 {viewingTags.map((tag) => (
@@ -121,12 +124,12 @@ const DocumentForm = ({
         </div>
         
         <div>
-          <Label htmlFor="notes">Observation Notes</Label>
+          <Label htmlFor="notes">{t('observationNotes')}</Label>
           <Textarea
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Enter any additional notes or observations"
+            placeholder={t('enterNotes')}
             className="bg-docvault-dark/50 border-docvault-accent/30 min-h-[100px]"
           />
         </div>

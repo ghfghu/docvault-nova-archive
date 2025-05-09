@@ -1,12 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Camera } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { toast } from '@/hooks/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
 import Layout from '@/components/Layout';
 import CameraCapture from '@/components/document/CameraCapture';
 import DocumentForm from '@/components/document/DocumentForm';
@@ -15,6 +15,7 @@ import { DocumentData } from '@/types/camera';
 const ScanDocument = () => {
   const navigate = useNavigate();
   const { addDocument } = useData();
+  const { t, language } = useLanguage();
   const [images, setImages] = useState<string[]>([]);
   
   // Form state
@@ -31,8 +32,8 @@ const ScanDocument = () => {
     
     if (images.length === 0) {
       toast({
-        title: "No images",
-        description: "Please capture at least one image before saving",
+        title: t('noImages'),
+        description: t('captureImageFirst'),
         variant: "destructive"
       });
       return;
@@ -58,11 +59,11 @@ const ScanDocument = () => {
   
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto animate-fade-in">
+      <div className="max-w-2xl mx-auto animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gradient">Scan Document</h1>
+          <h1 className="text-2xl font-bold text-gradient">{t('scanDocument')}</h1>
           <p className="text-docvault-gray text-sm">
-            Capture and document important information
+            {t('captureDocument')}
           </p>
         </header>
         
@@ -71,7 +72,7 @@ const ScanDocument = () => {
             <CardHeader>
               <CardTitle className="flex items-center text-xl">
                 <Camera className="mr-2 text-docvault-accent" size={20} />
-                Camera Capture
+                {t('cameraCapture')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -81,7 +82,7 @@ const ScanDocument = () => {
           
           <Card className="glass-card mb-6">
             <CardHeader>
-              <CardTitle className="text-xl">Document Information</CardTitle>
+              <CardTitle className="text-xl">{t('documentInfo')}</CardTitle>
             </CardHeader>
             <CardContent>
               <DocumentForm 
@@ -106,13 +107,13 @@ const ScanDocument = () => {
                 className="border-docvault-accent/30"
                 onClick={() => navigate('/documents')}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button 
                 type="submit" 
                 className="bg-docvault-accent hover:bg-docvault-accent/80"
               >
-                Save Document
+                {t('saveDocument')}
               </Button>
             </CardFooter>
           </Card>
