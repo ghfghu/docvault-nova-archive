@@ -53,6 +53,11 @@ const ScanDocument = () => {
     // Add document
     if (addDocument) {
       addDocument(newDocument);
+      
+      toast({
+        title: t('documentAdded'),
+        description: name || 'Untitled'
+      });
     }
     
     // Navigate to documents page

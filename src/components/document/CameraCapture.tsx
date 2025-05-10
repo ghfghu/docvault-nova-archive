@@ -24,7 +24,8 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
   const [flashSupported, setFlashSupported] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
-  const { t } = useLanguage();
+  const [cameraInitializing, setCameraInitializing] = useState(false);
+  const { t, language } = useLanguage();
 
   // Initialize camera when component mounts
   useEffect(() => {
@@ -43,18 +44,22 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
 
   // Handler for when video is loaded and ready
   const handleVideoLoad = () => {
+    console.log('Video metadata loaded');
     setVideoLoaded(true);
+    setCameraInitializing(false);
   };
 
   // Initialize camera with safe error handling
   const startCamera = async () => {
     try {
       setVideoLoaded(false);
+      setCameraInitializing(true);
       // Stop any existing streams first
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
       
+      console.log('Starting camera with environment facing mode');
       const constraints = {
         video: {
           facingMode: 'environment',
@@ -83,6 +88,7 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
       setCameraActive(true);
     } catch (error) {
       console.error('Error accessing camera:', error);
+      setCameraInitializing(false);
       toast({
         title: t('cameraError'),
         description: t('cameraPermissionError'),
@@ -209,6 +215,9 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
 
   // Ensure we always have a valid images array
   const safeImages = images || [];
+  
+  // Determine loading text direction based on language
+  const textDirection = language === 'ar' ? 'rtl' : 'ltr';
 
   return (
     <div className="space-y-4">
@@ -222,10 +231,10 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
               playsInline 
               className="w-full h-full object-cover"
             />
-            {!videoLoaded && (
+            {(!videoLoaded || cameraInitializing) && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                 <Loader2 className="h-10 w-10 animate-spin text-docvault-accent" />
-                <span className="ml-2 text-white">{t('cameraLoading')}</span>
+                <span className={`ml-2 text-white`} dir={textDirection}>{t('cameraLoading')}</span>
               </div>
             )}
           </>
@@ -235,8 +244,13 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
               type="button"
               onClick={startCamera}
               className="bg-docvault-accent hover:bg-docvault-accent/80"
+              disabled={cameraInitializing}
             >
-              <Camera className="mr-2" size={18} />
+              {cameraInitializing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="mr-2" size={18} />
+              )}
               {t('startCamera')}
             </Button>
           </div>
@@ -255,7 +269,7 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
               onClick={toggleFlash}
               variant="outline"
               className="border-docvault-accent/30"
-              disabled={!videoLoaded}
+              disabled={!videoLoaded || cameraInitializing}
             >
               {flashEnabled ? (
                 <>
@@ -275,7 +289,7 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
             type="button" 
             onClick={captureImage}
             className="bg-docvault-accent hover:bg-docvault-accent/80"
-            disabled={!videoLoaded || isCapturing}
+            disabled={!videoLoaded || isCapturing || cameraInitializing}
           >
             {isCapturing ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -290,6 +304,7 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
             onClick={resetCamera}
             variant="outline"
             className="border-docvault-accent/30"
+            disabled={cameraInitializing}
           >
             <RotateCw size={18} />
           </Button>
@@ -322,10 +337,15 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
             {safeImages.length < 2 && (
               <div 
                 className="w-full h-36 border border-dashed border-docvault-accent/30 rounded-md flex items-center justify-center cursor-pointer hover:bg-docvault-accent/10 transition-colors"
-                onClick={cameraActive && videoLoaded ? captureImage : startCamera}
+                onClick={(cameraActive && videoLoaded) ? captureImage : startCamera}
+                aria-disabled={cameraInitializing}
               >
                 <div className="flex flex-col items-center">
-                  <Plus size={24} className="text-docvault-accent mb-1" />
+                  {cameraInitializing ? (
+                    <Loader2 size={24} className="animate-spin text-docvault-accent mb-1" />
+                  ) : (
+                    <Plus size={24} className="text-docvault-accent mb-1" />
+                  )}
                   <span className="text-xs">{t('addAnotherImage')}</span>
                 </div>
               </div>

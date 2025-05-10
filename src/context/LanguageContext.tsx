@@ -210,7 +210,7 @@ const translations = {
     enableAutofill: 'تمكين الملء التلقائي',
     enableAssistantTips: 'تمكين تلميحات المساعد',
     showOnboarding: 'عرض التعليمات',
-    cameraLoading: 'الكاميرا قيد التحميل...',
+    cameraLoading: 'جاري تحميل الكاميرا...',
     cameraNotReady: 'الكاميرا ليست جاهزة بعد. يرجى الانتظار.',
     captureError: 'خطأ في التقاط الصورة',
   },
