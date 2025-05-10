@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 // Define available languages
 export type LanguageType = 'en' | 'ar';
@@ -239,12 +239,27 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 // Create provider
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<LanguageType>('en');
+  // Get stored language or default to English
+  const [language, setLanguage] = useState<LanguageType>(() => {
+    const storedLanguage = localStorage.getItem('docvault_language');
+    return (storedLanguage === 'en' || storedLanguage === 'ar') ? storedLanguage : 'en';
+  });
 
-  // Translation function
+  // Save language to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('docvault_language', language);
+  }, [language]);
+
+  // Translation function with safe fallbacks
   const t = (key: string): string => {
-    if (!translations[key]) {
+    // If key is undefined or not found in translations
+    if (!key || !translations[key]) {
       console.warn(`Translation key not found: ${key}`);
+      return key || '';
+    }
+    // If language value is not found for the key
+    if (!translations[key][language]) {
+      console.warn(`Translation not found for key: ${key} in language: ${language}`);
       return key;
     }
     return translations[key][language];

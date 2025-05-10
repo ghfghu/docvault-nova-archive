@@ -26,11 +26,11 @@ const ScanDocument = () => {
   const [notes, setNotes] = useState('');
   const [viewingTag, setViewingTag] = useState('');
   
-  // Submit form
+  // Submit form with null checks
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (images.length === 0) {
+    if (!images || images.length === 0) {
       toast({
         title: t('noImages'),
         description: t('captureImageFirst'),
@@ -39,27 +39,32 @@ const ScanDocument = () => {
       return;
     }
     
-    // Create document object
+    // Create document object with safe defaults
     const newDocument: DocumentData = {
-      name,
-      date,
+      name: name || 'Untitled',
+      date: date || new Date().toISOString().split('T')[0],
       type: docType || 'Other',
-      priority: Number(priority),
-      notes,
+      priority: Number(priority) || 5,
+      notes: notes || '',
       viewingTag: viewingTag || undefined,
-      images
+      images: images || []
     };
     
     // Add document
-    addDocument(newDocument);
+    if (addDocument) {
+      addDocument(newDocument);
+    }
     
     // Navigate to documents page
     navigate('/documents');
   };
   
+  // Ensure we have a valid language value for direction
+  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto animate-fade-in" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="max-w-2xl mx-auto animate-fade-in" dir={dir}>
         <header className="mb-6">
           <h1 className="text-2xl font-bold text-gradient">{t('scanDocument')}</h1>
           <p className="text-docvault-gray text-sm">
@@ -76,7 +81,7 @@ const ScanDocument = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <CameraCapture images={images} setImages={setImages} />
+              <CameraCapture images={images || []} setImages={setImages} />
             </CardContent>
           </Card>
           

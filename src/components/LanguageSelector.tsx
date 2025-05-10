@@ -13,6 +13,9 @@ import { useLanguage } from '@/context/LanguageContext';
 const LanguageSelector = () => {
   const { language, setLanguage, t } = useLanguage();
 
+  // Ensure language is a valid value before rendering
+  const currentLanguage = language || 'en';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -23,15 +26,15 @@ const LanguageSelector = () => {
       <DropdownMenuContent align="end">
         <DropdownMenuItem 
           onClick={() => setLanguage('en')}
-          className={language === 'en' ? 'bg-docvault-accent/20' : ''}
+          className={currentLanguage === 'en' ? 'bg-docvault-accent/20' : ''}
         >
-          {t('english')}
+          {t ? t('english') : 'English'}
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => setLanguage('ar')}
-          className={language === 'ar' ? 'bg-docvault-accent/20' : ''}
+          className={currentLanguage === 'ar' ? 'bg-docvault-accent/20' : ''}
         >
-          {t('arabic')}
+          {t ? t('arabic') : 'Arabic'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

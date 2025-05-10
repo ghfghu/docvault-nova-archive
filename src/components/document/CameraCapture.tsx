@@ -15,7 +15,7 @@ interface CameraCaptureProps {
   setImages: (images: string[]) => void;
 }
 
-const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
+const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -39,7 +39,7 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
     };
   }, [cameraActive, stream]);
 
-  // Initialize camera
+  // Initialize camera with safe error handling
   const startCamera = async () => {
     try {
       // Stop any existing streams first
@@ -64,9 +64,11 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
       
       // Check if torch is supported
       const videoTrack = mediaStream.getVideoTracks()[0];
-      const capabilities = videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
+      if (videoTrack) {
+        const capabilities = videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
+        setFlashSupported(!!capabilities?.torch);
+      }
       
-      setFlashSupported(!!capabilities.torch);
       setStream(mediaStream);
       setCameraActive(true);
     } catch (error) {
@@ -79,16 +81,19 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
     }
   };
   
-  // Toggle camera flash (if supported)
+  // Toggle camera flash (if supported) with additional checks
   const toggleFlash = async () => {
     if (!stream) return;
     
     try {
-      const videoTrack = stream.getVideoTracks()[0];
+      const videoTracks = stream.getVideoTracks();
+      if (!videoTracks || videoTracks.length === 0) return;
+      
+      const videoTrack = videoTracks[0];
       const capabilities = videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
       
       // Check if torch is supported
-      if (capabilities.torch) {
+      if (capabilities && capabilities.torch) {
         const torchConstraint: ExtendedMediaTrackConstraintSet = { torch: !flashEnabled };
         // Create constraint object
         const constraints: MediaTrackConstraintsWithTorch = {
@@ -109,30 +114,36 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
     }
   };
   
-  // Capture image from camera
+  // Capture image from camera with additional safety checks
   const captureImage = useCallback(() => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    // Check if video is properly initialized and playing
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.error('Video dimensions are not available');
+      return;
+    }
+    
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Set canvas dimensions to match video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // Convert canvas to data URL
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      setImages([...(images || []), imageDataUrl]);
       
-      // Draw video frame to canvas
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Convert canvas to data URL
-        const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        setImages([...images, imageDataUrl]);
-        
-        toast({
-          title: t('imageCaptured'),
-          description: `${images.length + 1} ${t('ofImages')}`
-        });
-      }
+      toast({
+        title: t('imageCaptured'),
+        description: `${(images || []).length + 1} ${t('ofImages')}`
+      });
     }
   }, [images, setImages, t]);
   
@@ -152,10 +163,14 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
     startCamera();
   };
   
-  // Remove image
+  // Remove image with safety check
   const removeImage = (index: number) => {
+    if (!images) return;
     setImages(images.filter((_, i) => i !== index));
   };
+
+  // Ensure we always have a valid images array
+  const safeImages = images || [];
 
   return (
     <div className="space-y-4">
@@ -230,10 +245,10 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
       )}
       
       {/* Captured images */}
-      {images.length > 0 && (
+      {safeImages.length > 0 && (
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            {images.map((image, index) => (
+            {safeImages.map((image, index) => (
               <div key={index} className="relative">
                 <img 
                   src={image} 
@@ -252,7 +267,7 @@ const CameraCapture = ({ images, setImages }: CameraCaptureProps) => {
               </div>
             ))}
             
-            {images.length < 2 && (
+            {safeImages.length < 2 && (
               <div 
                 className="w-full h-36 border border-dashed border-docvault-accent/30 rounded-md flex items-center justify-center cursor-pointer hover:bg-docvault-accent/10 transition-colors"
                 onClick={cameraActive ? captureImage : startCamera}
