@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCamera } from '@/hooks/useCamera';
@@ -19,24 +19,51 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
   // Initialize camera hook
   const cameraInterface = useCamera();
   
-  // Capture image handler with state updates
+  // Auto-start camera when component mounts
+  useEffect(() => {
+    console.log('CameraCapture component mounted');
+    if (!cameraInterface.cameraActive && !cameraInterface.cameraInitializing) {
+      console.log('Auto-starting camera');
+      cameraInterface.startCamera();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (cameraInterface.cameraActive) {
+        console.log('Stopping camera on unmount');
+        cameraInterface.stopCamera();
+      }
+    };
+  }, [cameraInterface]);
+  
+  // Capture image handler with state updates and improved error handling
   const handleCaptureImage = useCallback(() => {
+    console.log('Capture image requested');
     setIsCapturing(true);
     
     try {
+      // Get image data URL
       const imageDataUrl = cameraInterface.captureImage();
       
       // Check if imageDataUrl is truthy before proceeding
       if (imageDataUrl && typeof imageDataUrl === 'string') {
+        console.log('Image captured successfully, updating images array');
         setImages([...(images || []), imageDataUrl]);
         
         toast({
           title: t('imageCaptured'),
           description: `${(images || []).length + 1} ${t('ofImages')}`
         });
+      } else {
+        console.error('Image capture returned null or undefined');
       }
     } catch (err) {
       console.error('Error in capture handler:', err);
+      toast({
+        title: t('captureError'),
+        description: String(err),
+        variant: 'destructive'
+      });
     } finally {
       setIsCapturing(false);
     }

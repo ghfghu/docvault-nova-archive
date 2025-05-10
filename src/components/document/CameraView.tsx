@@ -3,6 +3,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2 } from 'lucide-react';
 import { UseCameraReturn } from '@/hooks/useCamera';
+import { useEffect } from 'react';
 
 interface CameraViewProps {
   cameraInterface: UseCameraReturn;
@@ -21,6 +22,15 @@ const CameraView = ({ cameraInterface }: CameraViewProps) => {
   // Determine loading text direction based on language
   const textDirection = language === 'ar' ? 'rtl' : 'ltr';
 
+  // Log camera status changes
+  useEffect(() => {
+    console.log('Camera status:', { 
+      cameraActive, 
+      videoLoaded, 
+      cameraInitializing 
+    });
+  }, [cameraActive, videoLoaded, cameraInitializing]);
+
   return (
     <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
       {cameraActive ? (
@@ -28,7 +38,8 @@ const CameraView = ({ cameraInterface }: CameraViewProps) => {
           <video 
             ref={videoRef} 
             autoPlay 
-            playsInline 
+            playsInline
+            muted
             className="w-full h-full object-cover"
           />
           {(!videoLoaded || cameraInitializing) && (

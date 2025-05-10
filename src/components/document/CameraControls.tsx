@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Camera, RotateCw, Zap, ZapOff, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { UseCameraReturn } from '@/hooks/useCamera';
+import { useEffect } from 'react';
 
 interface CameraControlsProps {
   cameraInterface: UseCameraReturn;
@@ -21,6 +22,17 @@ const CameraControls = ({ cameraInterface, onCapture, isCapturing }: CameraContr
     videoLoaded,
     cameraInitializing
   } = cameraInterface;
+
+  // Log camera control states for debugging
+  useEffect(() => {
+    console.log('Camera controls state:', {
+      cameraActive,
+      flashSupported,
+      flashEnabled,
+      videoLoaded,
+      cameraInitializing
+    });
+  }, [cameraActive, flashSupported, flashEnabled, videoLoaded, cameraInitializing]);
 
   if (!cameraActive) return null;
 
