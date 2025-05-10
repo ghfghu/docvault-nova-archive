@@ -1,7 +1,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, RotateCw, X, Zap, ZapOff, Plus } from 'lucide-react';
+import { Camera, RotateCw, X, Zap, ZapOff, Plus, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
@@ -22,6 +22,8 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [flashSupported, setFlashSupported] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const { t } = useLanguage();
 
   // Initialize camera when component mounts
@@ -39,9 +41,15 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
     };
   }, [cameraActive, stream]);
 
+  // Handler for when video is loaded and ready
+  const handleVideoLoad = () => {
+    setVideoLoaded(true);
+  };
+
   // Initialize camera with safe error handling
   const startCamera = async () => {
     try {
+      setVideoLoaded(false);
       // Stop any existing streams first
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -60,6 +68,8 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Add event listener for when video metadata is loaded
+        videoRef.current.onloadedmetadata = handleVideoLoad;
       }
       
       // Check if torch is supported
@@ -116,36 +126,63 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
   
   // Capture image from camera with additional safety checks
   const captureImage = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
-    
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    
-    // Check if video is properly initialized and playing
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      console.error('Video dimensions are not available');
+    if (!videoRef.current || !canvasRef.current || !videoLoaded) {
+      console.log('Video not ready for capture yet');
+      toast({
+        title: t('cameraError'),
+        description: t('cameraNotReady'),
+        variant: "destructive"
+      });
       return;
     }
     
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    setIsCapturing(true);
     
-    // Draw video frame to canvas
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
       
-      // Convert canvas to data URL
-      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setImages([...(images || []), imageDataUrl]);
+      // Check if video is properly initialized and playing
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        console.error('Video dimensions are not available');
+        toast({
+          title: t('cameraError'),
+          description: t('cameraNotReady'),
+          variant: "destructive"
+        });
+        setIsCapturing(false);
+        return;
+      }
       
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw video frame to canvas
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to data URL
+        const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setImages([...(images || []), imageDataUrl]);
+        
+        toast({
+          title: t('imageCaptured'),
+          description: `${(images || []).length + 1} ${t('ofImages')}`
+        });
+      }
+    } catch (err) {
+      console.error('Error capturing image:', err);
       toast({
-        title: t('imageCaptured'),
-        description: `${(images || []).length + 1} ${t('ofImages')}`
+        title: t('captureError'),
+        description: String(err),
+        variant: "destructive"
       });
+    } finally {
+      setIsCapturing(false);
     }
-  }, [images, setImages, t]);
+  }, [images, setImages, t, videoLoaded]);
   
   // Stop camera
   const stopCamera = () => {
@@ -155,6 +192,7 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
     }
     setCameraActive(false);
     setFlashEnabled(false);
+    setVideoLoaded(false);
   };
   
   // Reset camera
@@ -177,12 +215,20 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
       {/* Camera view */}
       <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
         {cameraActive ? (
-          <video 
-            ref={videoRef} 
-            autoPlay 
-            playsInline 
-            className="w-full h-full object-cover"
-          />
+          <>
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              playsInline 
+              className="w-full h-full object-cover"
+            />
+            {!videoLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <Loader2 className="h-10 w-10 animate-spin text-docvault-accent" />
+                <span className="ml-2 text-white">{t('cameraLoading')}</span>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex items-center justify-center h-full">
             <Button 
@@ -209,6 +255,7 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
               onClick={toggleFlash}
               variant="outline"
               className="border-docvault-accent/30"
+              disabled={!videoLoaded}
             >
               {flashEnabled ? (
                 <>
@@ -228,8 +275,13 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
             type="button" 
             onClick={captureImage}
             className="bg-docvault-accent hover:bg-docvault-accent/80"
+            disabled={!videoLoaded || isCapturing}
           >
-            <Camera className="mr-2" size={18} />
+            {isCapturing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Camera className="mr-2" size={18} />
+            )}
             {t('capture')}
           </Button>
           
@@ -270,7 +322,7 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
             {safeImages.length < 2 && (
               <div 
                 className="w-full h-36 border border-dashed border-docvault-accent/30 rounded-md flex items-center justify-center cursor-pointer hover:bg-docvault-accent/10 transition-colors"
-                onClick={cameraActive ? captureImage : startCamera}
+                onClick={cameraActive && videoLoaded ? captureImage : startCamera}
               >
                 <div className="flex flex-col items-center">
                   <Plus size={24} className="text-docvault-accent mb-1" />

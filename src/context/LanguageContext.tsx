@@ -1,269 +1,229 @@
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-
-// Define available languages
-export type LanguageType = 'en' | 'ar';
-
-// Define translation schema
-interface Translations {
-  [key: string]: {
-    en: string;
-    ar: string;
-  };
-}
-
-// Define the translations
-const translations: Translations = {
-  appName: {
-    en: 'DocVault',
-    ar: 'وثائق الخزانة'
-  },
-  tagline: {
-    en: 'Secure Document Archiving',
-    ar: 'أرشفة الوثائق الآمنة'
-  },
-  welcomeBack: {
-    en: 'Welcome Back',
-    ar: 'مرحبًا بعودتك'
-  },
-  enterCredentials: {
-    en: 'Enter your credentials to continue',
-    ar: 'أدخل بيانات الاعتماد الخاصة بك للمتابعة'
-  },
-  username: {
-    en: 'Username',
-    ar: 'اسم المستخدم'
-  },
-  password: {
-    en: 'Password',
-    ar: 'كلمة المرور'
-  },
-  signIn: {
-    en: 'Sign In',
-    ar: 'تسجيل الدخول'
-  },
-  signingIn: {
-    en: 'Signing in...',
-    ar: 'جاري تسجيل الدخول...'
-  },
-  createAccount: {
-    en: 'Create Account',
-    ar: 'إنشاء حساب'
-  },
-  createNewAccount: {
-    en: 'Create a new account to get started',
-    ar: 'أنشئ حسابًا جديدًا للبدء'
-  },
-  chooseUsername: {
-    en: 'Choose Username',
-    ar: 'اختر اسم المستخدم'
-  },
-  createPassword: {
-    en: 'Create Password',
-    ar: 'إنشاء كلمة المرور'
-  },
-  creatingAccount: {
-    en: 'Creating account...',
-    ar: 'جاري إنشاء الحساب...'
-  },
-  appInfo: {
-    en: 'DocVault - Secure Document Archiving',
-    ar: 'وثائق الخزانة - أرشفة الوثائق الآمنة'
-  },
-  dataStorage: {
-    en: 'All data is stored securely on your device',
-    ar: 'يتم تخزين جميع البيانات بشكل آمن على جهازك'
-  },
-  home: {
-    en: 'Home',
-    ar: 'الرئيسية'
-  },
-  scan: {
-    en: 'Scan',
-    ar: 'مسح'
-  },
-  documents: {
-    en: 'Documents',
-    ar: 'الوثائق'
-  },
-  wanted: {
-    en: 'Wanted',
-    ar: 'مطلوبين'
-  },
-  reports: {
-    en: 'Reports',
-    ar: 'التقارير'
-  },
-  settings: {
-    en: 'Settings',
-    ar: 'الإعدادات'
-  },
-  language: {
-    en: 'Language',
-    ar: 'اللغة'
-  },
-  english: {
-    en: 'English',
-    ar: 'الإنجليزية'
-  },
-  arabic: {
-    en: 'Arabic',
-    ar: 'العربية'
-  },
-  scanDocument: {
-    en: 'Scan Document',
-    ar: 'مسح المستند'
-  },
-  captureDocument: {
-    en: 'Capture and document important information',
-    ar: 'التقاط وتوثيق المعلومات المهمة'
-  },
-  cameraCapture: {
-    en: 'Camera Capture',
-    ar: 'التقاط الكاميرا'
-  },
-  startCamera: {
-    en: 'Start Camera',
-    ar: 'تشغيل الكاميرا'
-  },
-  enableFlash: {
-    en: 'Enable Flash',
-    ar: 'تفعيل الفلاش'
-  },
-  disableFlash: {
-    en: 'Disable Flash',
-    ar: 'تعطيل الفلاش'
-  },
-  capture: {
-    en: 'Capture',
-    ar: 'التقاط'
-  },
-  imageCaptured: {
-    en: 'Image captured',
-    ar: 'تم التقاط الصورة'
-  },
-  ofImages: {
-    en: 'of 2 images captured',
-    ar: 'من 2 صور تم التقاطها'
-  },
-  addAnotherImage: {
-    en: 'Add another image',
-    ar: 'إضافة صورة أخرى'
-  },
-  documentInfo: {
-    en: 'Document Information',
-    ar: 'معلومات المستند'
-  },
-  documentName: {
-    en: 'Document Name',
-    ar: 'اسم المستند'
-  },
-  enterDocumentName: {
-    en: 'Enter document name',
-    ar: 'أدخل اسم المستند'
-  },
-  date: {
-    en: 'Date',
-    ar: 'التاريخ'
-  },
-  documentType: {
-    en: 'Document Type',
-    ar: 'نوع المستند'
-  },
-  selectType: {
-    en: 'Select type',
-    ar: 'اختر النوع'
-  },
-  priority: {
-    en: 'Priority (1-10)',
-    ar: 'الأولوية (1-10)'
-  },
-  viewingTag: {
-    en: 'Viewing Tag (Optional)',
-    ar: 'علامة العرض (اختياري)'
-  },
-  selectTag: {
-    en: 'Select tag',
-    ar: 'اختر العلامة'
-  },
-  observationNotes: {
-    en: 'Observation Notes',
-    ar: 'ملاحظات المراقبة'
-  },
-  enterNotes: {
-    en: 'Enter any additional notes or observations',
-    ar: 'أدخل أي ملاحظات أو مشاهدات إضافية'
-  },
-  cancel: {
-    en: 'Cancel',
-    ar: 'إلغاء'
-  },
-  saveDocument: {
-    en: 'Save Document',
-    ar: 'حفظ المستند'
-  },
-  noImages: {
-    en: 'No images',
-    ar: 'لا توجد صور'
-  },
-  captureImageFirst: {
-    en: 'Please capture at least one image before saving',
-    ar: 'يرجى التقاط صورة واحدة على الأقل قبل الحفظ'
-  },
-  cameraError: {
-    en: 'Camera Error',
-    ar: 'خطأ في الكاميرا'
-  },
-  cameraPermissionError: {
-    en: 'Could not access your camera. Please check permissions.',
-    ar: 'تعذر الوصول إلى الكاميرا. يرجى التحقق من الأذونات.'
-  },
-  flashNotSupported: {
-    en: 'Flash not supported',
-    ar: 'الفلاش غير مدعوم'
-  },
-  deviceNoFlash: {
-    en: 'Your device camera does not support flash control',
-    ar: 'كاميرا جهازك لا تدعم التحكم في الفلاش'
-  }
-};
-
-// Create the context
+// Define the context type
 interface LanguageContextType {
-  language: LanguageType;
-  setLanguage: (language: LanguageType) => void;
+  language: 'en' | 'ar';
+  setLanguage: (language: 'en' | 'ar') => void;
   t: (key: string) => string;
 }
 
+// Create the context with a default value
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Create provider
-export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  // Get stored language or default to English
-  const [language, setLanguage] = useState<LanguageType>(() => {
-    const storedLanguage = localStorage.getItem('docvault_language');
-    return (storedLanguage === 'en' || storedLanguage === 'ar') ? storedLanguage : 'en';
-  });
+// Translations
+const translations = {
+  en: {
+    scanDocument: 'Scan Document',
+    captureDocument: 'Capture a document by taking a picture with your camera.',
+    cameraCapture: 'Camera Capture',
+    documentInfo: 'Document Information',
+    documentName: 'Document Name',
+    enterDocumentName: 'Enter document name',
+    date: 'Date',
+    documentType: 'Document Type',
+    selectType: 'Select document type',
+    priority: 'Priority',
+    viewingTag: 'Viewing Tag',
+    selectTag: 'Select viewing tag',
+    observationNotes: 'Observation Notes',
+    enterNotes: 'Enter observation notes',
+    cancel: 'Cancel',
+    saveDocument: 'Save Document',
+    noImages: 'No Images',
+    captureImageFirst: 'Please capture an image first.',
+    cameraError: 'Camera Error',
+    cameraPermissionError: 'Please grant camera permissions to use this feature.',
+    imageCaptured: 'Image Captured',
+    ofImages: 'of Images',
+    startCamera: 'Start Camera',
+    enableFlash: 'Enable Flash',
+    disableFlash: 'Disable Flash',
+    flashNotSupported: 'Flash Not Supported',
+    deviceNoFlash: 'Your device does not support flash.',
+    addAnotherImage: 'Add Another Image',
+    english: 'English',
+    arabic: 'Arabic',
+    dashboard: 'Dashboard',
+    documents: 'Documents',
+    wantedPersons: 'Wanted Persons',
+    reports: 'Reports',
+    settings: 'Settings',
+    logout: 'Logout',
+    general: 'General',
+    account: 'Account',
+    appearance: 'Appearance',
+    language: 'Language',
+    theme: 'Theme',
+    auto: 'Auto',
+    light: 'Light',
+    dark: 'Dark',
+    notifications: 'Notifications',
+    emailNotifications: 'Email Notifications',
+    pushNotifications: 'Push Notifications',
+    privacy: 'Privacy',
+    dataSharing: 'Data Sharing',
+    termsOfService: 'Terms of Service',
+    contactUs: 'Contact Us',
+    aboutUs: 'About Us',
+    version: 'Version',
+    rightsReserved: 'All Rights Reserved',
+    confirmLogout: 'Are you sure you want to logout?',
+    yes: 'Yes',
+    no: 'No',
+    name: 'Name',
+    fullName: 'Full Name',
+    photo: 'Photo',
+    documentNumber: 'Document Number',
+    notes: 'Notes',
+    addWantedPerson: 'Add Wanted Person',
+    editWantedPerson: 'Edit Wanted Person',
+    enterFullName: 'Enter full name',
+    enterDocumentNumber: 'Enter document number',
+    enterNotesHere: 'Enter notes here',
+    wantedPersonAdded: 'Wanted person added successfully!',
+    wantedPersonUpdated: 'Wanted person updated successfully!',
+    wantedPersonDeleted: 'Wanted person deleted successfully!',
+    deleteConfirmation: 'Are you sure you want to delete this person?',
+    addDocument: 'Add Document',
+    editDocument: 'Edit Document',
+    documentAdded: 'Document added successfully!',
+    documentUpdated: 'Document updated successfully!',
+    documentDeleted: 'Document deleted successfully!',
+    deleteDocumentConfirmation: 'Are you sure you want to delete this document?',
+    import: 'Import',
+    export: 'Export',
+    clearAllData: 'Clear All Data',
+    loadSampleData: 'Load Sample Data',
+    importData: 'Import Data',
+    exportData: 'Export Data',
+    clearDataConfirmation: 'Are you sure you want to clear all data?',
+    loadSampleDataConfirmation: 'Are you sure you want to load sample data? This will overwrite your current data.',
+    dataImportedSuccessfully: 'Data imported successfully!',
+    dataExportedSuccessfully: 'Data exported successfully!',
+    sampleDataLoadedSuccessfully: 'Sample data loaded successfully!',
+    allDataClearedSuccessfully: 'All data cleared successfully!',
+    invalidJsonFormat: 'Invalid JSON format.',
+    importExport: 'Import / Export',
+    dangerZone: 'Danger Zone',
+    darkMode: 'Dark Mode',
+    enableAutofill: 'Enable Autofill',
+    enableAssistantTips: 'Enable Assistant Tips',
+    showOnboarding: 'Show Onboarding',
+    cameraLoading: 'Camera is loading...',
+    cameraNotReady: 'Camera is not ready yet. Please wait.',
+    captureError: 'Error capturing image',
+  },
+  ar: {
+    scanDocument: 'مسح المستند',
+    captureDocument: 'التقط صورة لمستند باستخدام كاميرا جهازك.',
+    cameraCapture: 'التقاط بالكاميرا',
+    documentInfo: 'معلومات المستند',
+    documentName: 'اسم المستند',
+    enterDocumentName: 'أدخل اسم المستند',
+    date: 'التاريخ',
+    documentType: 'نوع المستند',
+    selectType: 'اختر نوع المستند',
+    priority: 'الأولوية',
+    viewingTag: 'علامة العرض',
+    selectTag: 'اختر علامة العرض',
+    observationNotes: 'ملاحظات المراقبة',
+    enterNotes: 'أدخل ملاحظات المراقبة',
+    cancel: 'إلغاء',
+    saveDocument: 'حفظ المستند',
+    noImages: 'لا توجد صور',
+    captureImageFirst: 'يرجى التقاط صورة أولاً.',
+    cameraError: 'خطأ في الكاميرا',
+    cameraPermissionError: 'يرجى منح أذونات الكاميرا لاستخدام هذه الميزة.',
+    imageCaptured: 'تم التقاط الصورة',
+    ofImages: 'من الصور',
+    startCamera: 'تشغيل الكاميرا',
+    enableFlash: 'تمكين الفلاش',
+    disableFlash: 'تعطيل الفلاش',
+    flashNotSupported: 'الفلاش غير مدعوم',
+    deviceNoFlash: 'جهازك لا يدعم الفلاش.',
+    addAnotherImage: 'إضافة صورة أخرى',
+    english: 'الإنجليزية',
+    arabic: 'العربية',
+    dashboard: 'لوحة التحكم',
+    documents: 'المستندات',
+    wantedPersons: 'المطلوبين',
+    reports: 'التقارير',
+    settings: 'الإعدادات',
+    logout: 'تسجيل الخروج',
+    general: 'عام',
+    account: 'الحساب',
+    appearance: 'المظهر',
+    language: 'اللغة',
+    theme: 'السمة',
+    auto: 'تلقائي',
+    light: 'فاتح',
+    dark: 'داكن',
+    notifications: 'الإشعارات',
+    emailNotifications: 'إشعارات البريد الإلكتروني',
+    pushNotifications: 'إشعارات الدفع',
+    privacy: 'الخصوصية',
+    dataSharing: 'مشاركة البيانات',
+    termsOfService: 'شروط الخدمة',
+    contactUs: 'اتصل بنا',
+    aboutUs: 'معلومات عنا',
+    version: 'الإصدار',
+    rightsReserved: 'جميع الحقوق محفوظة',
+    confirmLogout: 'هل أنت متأكد أنك تريد تسجيل الخروج؟',
+    yes: 'نعم',
+    no: 'لا',
+    name: 'الاسم',
+    fullName: 'الاسم الكامل',
+    photo: 'الصورة',
+    documentNumber: 'رقم الوثيقة',
+    notes: 'ملاحظات',
+    addWantedPerson: 'إضافة شخص مطلوب',
+    editWantedPerson: 'تعديل شخص مطلوب',
+    enterFullName: 'أدخل الاسم الكامل',
+    enterDocumentNumber: 'أدخل رقم الوثيقة',
+    enterNotesHere: 'أدخل الملاحظات هنا',
+    wantedPersonAdded: 'تمت إضافة الشخص المطلوب بنجاح!',
+    wantedPersonUpdated: 'تم تحديث الشخص المطلوب بنجاح!',
+    wantedPersonDeleted: 'تم حذف الشخص المطلوب بنجاح!',
+    deleteConfirmation: 'هل أنت متأكد أنك تريد حذف هذا الشخص؟',
+    addDocument: 'إضافة مستند',
+    editDocument: 'تعديل مستند',
+    documentAdded: 'تمت إضافة المستند بنجاح!',
+    documentUpdated: 'تم تحديث المستند بنجاح!',
+    documentDeleted: 'تم حذف المستند بنجاح!',
+    deleteDocumentConfirmation: 'هل أنت متأكد أنك تريد حذف هذا المستند؟',
+    import: 'استيراد',
+    export: 'تصدير',
+    clearAllData: 'مسح جميع البيانات',
+    loadSampleData: 'تحميل بيانات تجريبية',
+    importData: 'استيراد البيانات',
+    exportData: 'تصدير البيانات',
+    clearDataConfirmation: 'هل أنت متأكد أنك تريد مسح جميع البيانات؟',
+    loadSampleDataConfirmation: 'هل أنت متأكد أنك تريد تحميل بيانات تجريبية؟ سيؤدي ذلك إلى استبدال بياناتك الحالية.',
+    dataImportedSuccessfully: 'تم استيراد البيانات بنجاح!',
+    dataExportedSuccessfully: 'تم تصدير البيانات بنجاح!',
+    sampleDataLoadedSuccessfully: 'تم تحميل البيانات التجريبية بنجاح!',
+    allDataClearedSuccessfully: 'تم مسح جميع البيانات بنجاح!',
+    invalidJsonFormat: 'تنسيق JSON غير صالح.',
+    importExport: 'استيراد / تصدير',
+    dangerZone: 'منطقة الخطر',
+    darkMode: 'الوضع الداكن',
+    enableAutofill: 'تمكين الملء التلقائي',
+    enableAssistantTips: 'تمكين تلميحات المساعد',
+    showOnboarding: 'عرض التعليمات',
+    cameraLoading: 'الكاميرا قيد التحميل...',
+    cameraNotReady: 'الكاميرا ليست جاهزة بعد. يرجى الانتظار.',
+    captureError: 'خطأ في التقاط الصورة',
+  },
+};
 
-  // Save language to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem('docvault_language', language);
+// Provider component
+export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
+  const [language, setLanguage] = useState<'en' | 'ar'>('en');
+
+  // Function to translate text
+  const t = useCallback((key: string) => {
+    return translations[language][key] || key;
   }, [language]);
-
-  // Translation function with safe fallbacks
-  const t = (key: string): string => {
-    // If key is undefined or not found in translations
-    if (!key || !translations[key]) {
-      console.warn(`Translation key not found: ${key}`);
-      return key || '';
-    }
-    // If language value is not found for the key
-    if (!translations[key][language]) {
-      console.warn(`Translation not found for key: ${key} in language: ${language}`);
-      return key;
-    }
-    return translations[key][language];
-  };
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
@@ -272,7 +232,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Create custom hook
+// Custom hook to use the language context
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (context === undefined) {
