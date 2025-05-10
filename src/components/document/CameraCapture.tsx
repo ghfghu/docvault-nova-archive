@@ -26,7 +26,8 @@ const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
     try {
       const imageDataUrl = cameraInterface.captureImage();
       
-      if (imageDataUrl) {
+      // Check if imageDataUrl is truthy before proceeding
+      if (imageDataUrl && typeof imageDataUrl === 'string') {
         setImages([...(images || []), imageDataUrl]);
         
         toast({
