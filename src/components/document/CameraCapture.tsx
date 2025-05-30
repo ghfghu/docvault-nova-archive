@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCamera } from '@/hooks/useCamera';
@@ -15,26 +14,31 @@ interface CameraCaptureProps {
 const CameraCapture = ({ images = [], setImages }: CameraCaptureProps) => {
   const [isCapturing, setIsCapturing] = useState(false);
   const { t } = useLanguage();
+  const hasMountedRef = useRef(false);
   
   // Initialize camera hook
   const cameraInterface = useCamera();
   
-  // Auto-start camera when component mounts
+  // Auto-start camera when component mounts - prevent multiple mounts
   useEffect(() => {
-    console.log('CameraCapture component mounted');
-    if (!cameraInterface.cameraActive && !cameraInterface.cameraInitializing) {
-      console.log('Auto-starting camera');
-      cameraInterface.startCamera();
+    if (!hasMountedRef.current) {
+      console.log('CameraCapture component mounted for first time');
+      hasMountedRef.current = true;
+      
+      if (!cameraInterface.cameraActive && !cameraInterface.cameraInitializing) {
+        console.log('Auto-starting camera');
+        cameraInterface.startCamera();
+      }
     }
     
     // Cleanup on unmount
     return () => {
-      if (cameraInterface.cameraActive) {
+      if (hasMountedRef.current && cameraInterface.cameraActive) {
         console.log('Stopping camera on unmount');
         cameraInterface.stopCamera();
       }
     };
-  }, [cameraInterface]);
+  }, []); // Empty dependency array to prevent re-running
   
   // Capture image handler with state updates and improved error handling
   const handleCaptureImage = useCallback(() => {

@@ -87,6 +87,8 @@ export const useCamera = (): UseCameraReturn => {
       if (stream) {
         console.log('Camera already started, stopping first');
         stopCamera();
+        // Wait for cleanup to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       console.log('Requesting camera access...');
@@ -107,17 +109,34 @@ export const useCamera = (): UseCameraReturn => {
       setStream(mediaStream);
       setCameraActive(true);
       
-      // Wait a bit for the component to render the video element
-      const assignStreamToVideo = () => {
-        if (videoRef.current) {
-          console.log('Assigning stream to video element');
-          videoRef.current.srcObject = mediaStream;
-          videoRef.current.play().catch(err => {
-            console.error('Error playing video:', err);
-          });
-        } else {
-          console.log('Video ref still null, retrying in 100ms');
-          setTimeout(assignStreamToVideo, 100);
+      // Improved video element assignment with better timing
+      const assignStreamToVideo = async () => {
+        let attempts = 0;
+        const maxAttempts = 30; // 3 seconds max
+        
+        while (attempts < maxAttempts) {
+          if (videoRef.current && videoRef.current.parentElement) {
+            console.log('Assigning stream to video element');
+            videoRef.current.srcObject = mediaStream;
+            try {
+              await videoRef.current.play();
+              console.log('Video started playing successfully');
+              break;
+            } catch (err) {
+              console.error('Error playing video:', err);
+            }
+            break;
+          } else {
+            console.log(`Video ref not ready, attempt ${attempts + 1}/${maxAttempts}`);
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error('Failed to assign stream after maximum attempts');
+          setCameraActive(false);
+          setCameraInitializing(false);
         }
       };
       
