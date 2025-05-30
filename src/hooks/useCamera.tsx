@@ -57,13 +57,13 @@ export const useCamera = (): UseCameraReturn => {
     };
   }, [stream]);
 
-  // Start camera function with improved error handling
+  // Start camera function with improved error handling and retry logic
   const startCamera = useCallback(async () => {
     try {
       setCameraInitializing(true);
       setVideoLoaded(false);
       
-      if (videoRef.current && videoRef.current.srcObject) {
+      if (stream) {
         console.log('Camera already started, stopping first');
         stopCamera();
       }
@@ -82,22 +82,30 @@ export const useCamera = (): UseCameraReturn => {
       setFlashSupported(flashSupport);
       console.log('Flash supported:', flashSupport);
       
-      // Set stream and update state
+      // Set stream first
       setStream(mediaStream);
       setCameraActive(true);
       
-      // Assign stream to video element
-      if (videoRef.current) {
-        console.log('Assigning stream to video element');
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.play().catch(err => {
-          console.error('Error playing video:', err);
-        });
-      } else {
-        console.error('Video ref is null');
-      }
+      // Wait a bit for the component to render the video element
+      const assignStreamToVideo = () => {
+        if (videoRef.current) {
+          console.log('Assigning stream to video element');
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current.play().catch(err => {
+            console.error('Error playing video:', err);
+          });
+        } else {
+          console.log('Video ref still null, retrying in 100ms');
+          setTimeout(assignStreamToVideo, 100);
+        }
+      };
+      
+      // Start the assignment process
+      assignStreamToVideo();
+      
     } catch (error) {
       console.error('Camera start error:', error);
+      setCameraActive(false);
       toast({
         title: t('cameraError'),
         description: t('cameraPermissionError'),
@@ -106,7 +114,7 @@ export const useCamera = (): UseCameraReturn => {
     } finally {
       setCameraInitializing(false);
     }
-  }, [t]);
+  }, [t, stream, stopCamera]);
 
   // Stop camera function
   const stopCamera = useCallback(() => {
