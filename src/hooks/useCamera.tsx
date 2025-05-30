@@ -57,6 +57,27 @@ export const useCamera = (): UseCameraReturn => {
     };
   }, [stream]);
 
+  // Stop camera function - moved before startCamera to fix dependency error
+  const stopCamera = useCallback(() => {
+    console.log('Stopping camera...');
+    if (stream) {
+      stream.getTracks().forEach(track => {
+        console.log('Stopping track:', track.kind);
+        track.stop();
+      });
+      setStream(null);
+    }
+    
+    setCameraActive(false);
+    setVideoLoaded(false);
+    setFlashEnabled(false);
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    console.log('Camera stopped');
+  }, [stream]);
+
   // Start camera function with improved error handling and retry logic
   const startCamera = useCallback(async () => {
     try {
@@ -115,27 +136,6 @@ export const useCamera = (): UseCameraReturn => {
       setCameraInitializing(false);
     }
   }, [t, stream, stopCamera]);
-
-  // Stop camera function
-  const stopCamera = useCallback(() => {
-    console.log('Stopping camera...');
-    if (stream) {
-      stream.getTracks().forEach(track => {
-        console.log('Stopping track:', track.kind);
-        track.stop();
-      });
-      setStream(null);
-    }
-    
-    setCameraActive(false);
-    setVideoLoaded(false);
-    setFlashEnabled(false);
-    
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    console.log('Camera stopped');
-  }, [stream]);
 
   // Reset camera function
   const resetCamera = useCallback(() => {
