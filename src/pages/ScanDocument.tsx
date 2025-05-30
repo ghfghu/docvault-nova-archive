@@ -26,9 +26,11 @@ const ScanDocument = () => {
   const [notes, setNotes] = useState('');
   const [viewingTag, setViewingTag] = useState('');
   
-  // Submit form with null checks
+  // Submit form with proper validation
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Form submission attempt:', { name, docType, images: images?.length });
     
     if (!images || images.length === 0) {
       toast({
@@ -39,16 +41,36 @@ const ScanDocument = () => {
       return;
     }
     
-    // Create document object with safe defaults
+    if (!name.trim()) {
+      toast({
+        title: t('validationError') || 'Validation Error',
+        description: t('documentNameRequired') || 'Document name is required',
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!docType) {
+      toast({
+        title: t('validationError') || 'Validation Error',
+        description: t('documentTypeRequired') || 'Document type is required',
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create document object with validated data
     const newDocument: DocumentData = {
-      name: name || 'Untitled',
-      date: date || new Date().toISOString().split('T')[0],
-      type: docType || 'Other',
+      name: name.trim(),
+      date: date,
+      type: docType,
       priority: Number(priority) || 5,
-      notes: notes || '',
+      notes: notes.trim(),
       viewingTag: viewingTag || undefined,
-      images: images || []
+      images: images
     };
+    
+    console.log('Creating document:', newDocument);
     
     // Add document
     if (addDocument) {
@@ -56,7 +78,7 @@ const ScanDocument = () => {
       
       toast({
         title: t('documentAdded'),
-        description: name || 'Untitled'
+        description: name.trim()
       });
     }
     

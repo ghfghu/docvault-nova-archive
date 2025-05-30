@@ -67,14 +67,18 @@ const DocumentForm = ({
           </div>
           
           <div>
-            <Label htmlFor="docType">{t('documentType')}</Label>
-            <Select value={docType} onValueChange={setDocType}>
+            <Label htmlFor="docType">{t('documentType')} *</Label>
+            <Select value={docType} onValueChange={setDocType} required>
               <SelectTrigger className="bg-docvault-dark/50 border-docvault-accent/30">
                 <SelectValue placeholder={t('selectType')} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-docvault-dark border-docvault-accent/30 z-50">
                 {documentTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
+                  <SelectItem 
+                    key={type} 
+                    value={type}
+                    className="hover:bg-docvault-accent/20 focus:bg-docvault-accent/20"
+                  >
                     {type}
                   </SelectItem>
                 ))}
@@ -112,9 +116,13 @@ const DocumentForm = ({
               <SelectTrigger className="bg-docvault-dark/50 border-docvault-accent/30">
                 <SelectValue placeholder={t('selectTag')} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-docvault-dark border-docvault-accent/30 z-50">
                 {viewingTags.map((tag) => (
-                  <SelectItem key={tag} value={tag}>
+                  <SelectItem 
+                    key={tag} 
+                    value={tag}
+                    className="hover:bg-docvault-accent/20 focus:bg-docvault-accent/20"
+                  >
                     {tag}
                   </SelectItem>
                 ))}
