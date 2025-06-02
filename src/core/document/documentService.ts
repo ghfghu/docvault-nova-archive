@@ -1,5 +1,4 @@
 
-
 import { DocumentData } from '@/types/camera';
 
 // Import the Document type from DataContext since it includes id and createdAt
@@ -44,4 +43,3 @@ export class DocumentService {
     };
   }
 }
-
