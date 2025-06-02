@@ -1,4 +1,5 @@
 
+
 import { DocumentData } from '@/types/camera';
 
 // Import the Document type from DataContext since it includes id and createdAt
@@ -29,7 +30,7 @@ export class DocumentService {
     };
   }
   
-  static createDocument(data: Omit<DocumentData, 'id' | 'createdAt'>): Document {
+  static createDocument(data: DocumentData): Document {
     return {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
@@ -43,3 +44,4 @@ export class DocumentService {
     };
   }
 }
+
