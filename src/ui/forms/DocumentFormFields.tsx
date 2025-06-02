@@ -11,17 +11,11 @@ import {
 } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
 import { documentTypes, viewingTags } from '@/types/camera';
+import { DocumentFormData } from '@/types/document';
 
 interface DocumentFormFieldsProps {
-  formData: {
-    name: string;
-    date: string;
-    docType: string;
-    priority: number;
-    notes: string;
-    viewingTag: string;
-  };
-  onFieldChange: (field: string, value: any) => void;
+  formData: DocumentFormData;
+  onFieldChange: (field: keyof DocumentFormData, value: any) => void;
 }
 
 const DocumentFormFields = ({ formData, onFieldChange }: DocumentFormFieldsProps) => {

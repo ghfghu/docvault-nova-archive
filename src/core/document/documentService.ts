@@ -1,26 +1,21 @@
 
-import { DocumentData } from '@/types/camera';
-
-// Import the Document type from DataContext since it includes id and createdAt
-type Document = DocumentData & {
-  id: string;
-  createdAt: string;
-};
+import { DocumentCreateInput, BaseDocument } from '@/types/document';
+import { DocumentValidationResult, DocumentValidationError } from '@/types/document';
 
 export class DocumentService {
-  static validateDocument(document: Partial<DocumentData>): { isValid: boolean; errors: string[] } {
-    const errors: string[] = [];
+  static validateDocument(document: Partial<DocumentCreateInput>): DocumentValidationResult {
+    const errors: DocumentValidationError[] = [];
     
     if (!document.name?.trim()) {
-      errors.push('Document name is required');
+      errors.push({ field: 'name', message: 'Document name is required' });
     }
     
     if (!document.type) {
-      errors.push('Document type is required');
+      errors.push({ field: 'type', message: 'Document type is required' });
     }
     
     if (!document.images || document.images.length === 0) {
-      errors.push('At least one image is required');
+      errors.push({ field: 'images', message: 'At least one image is required' });
     }
     
     return {
@@ -29,17 +24,17 @@ export class DocumentService {
     };
   }
   
-  static createDocument(data: DocumentData): Document {
+  static createDocument(input: DocumentCreateInput): BaseDocument {
     return {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
-      name: data.name.trim(),
-      date: data.date,
-      type: data.type,
-      priority: Number(data.priority) || 5,
-      notes: data.notes?.trim() || '',
-      viewingTag: data.viewingTag,
-      images: data.images
+      name: input.name.trim(),
+      date: input.date,
+      type: input.type,
+      priority: Number(input.priority) || 5,
+      notes: input.notes?.trim() || '',
+      viewingTag: input.viewingTag,
+      images: input.images
     };
   }
 }
