@@ -1,90 +1,18 @@
 
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
-import { useData } from '@/context/DataContext';
-import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import Layout from '@/components/Layout';
 import CameraCapture from '@/components/document/CameraCapture';
 import DocumentForm from '@/components/document/DocumentForm';
-import { DocumentData } from '@/types/camera';
+import { useDocumentForm } from '@/hooks/useDocumentForm';
 
 const ScanDocument = () => {
   const navigate = useNavigate();
-  const { addDocument } = useData();
   const { t, language } = useLanguage();
-  const [images, setImages] = useState<string[]>([]);
-  
-  // Form state
-  const [name, setName] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [docType, setDocType] = useState('');
-  const [priority, setPriority] = useState(5);
-  const [notes, setNotes] = useState('');
-  const [viewingTag, setViewingTag] = useState('');
-  
-  // Submit form with proper validation
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    console.log('Form submission attempt:', { name, docType, images: images?.length });
-    
-    if (!images || images.length === 0) {
-      toast({
-        title: t('noImages'),
-        description: t('captureImageFirst'),
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!name.trim()) {
-      toast({
-        title: t('validationError') || 'Validation Error',
-        description: t('documentNameRequired') || 'Document name is required',
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!docType) {
-      toast({
-        title: t('validationError') || 'Validation Error',
-        description: t('documentTypeRequired') || 'Document type is required',
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Create document object with validated data
-    const newDocument: DocumentData = {
-      name: name.trim(),
-      date: date,
-      type: docType,
-      priority: Number(priority) || 5,
-      notes: notes.trim(),
-      viewingTag: viewingTag || undefined,
-      images: images
-    };
-    
-    console.log('Creating document:', newDocument);
-    
-    // Add document
-    if (addDocument) {
-      addDocument(newDocument);
-      
-      toast({
-        title: t('documentAdded'),
-        description: name.trim()
-      });
-    }
-    
-    // Navigate to documents page
-    navigate('/documents');
-  };
+  const { formData, images, setImages, updateField, submitDocument } = useDocumentForm();
   
   // Ensure we have a valid language value for direction
   const dir = language === 'ar' ? 'rtl' : 'ltr';
@@ -99,7 +27,7 @@ const ScanDocument = () => {
           </p>
         </header>
         
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={submitDocument}>
           <Card className="glass-card mb-6">
             <CardHeader>
               <CardTitle className="flex items-center text-xl">
@@ -118,18 +46,8 @@ const ScanDocument = () => {
             </CardHeader>
             <CardContent>
               <DocumentForm 
-                name={name}
-                setName={setName}
-                date={date}
-                setDate={setDate}
-                docType={docType}
-                setDocType={setDocType}
-                priority={priority}
-                setPriority={setPriority}
-                notes={notes}
-                setNotes={setNotes}
-                viewingTag={viewingTag}
-                setViewingTag={setViewingTag}
+                formData={formData}
+                onFieldChange={updateField}
               />
             </CardContent>
             <CardFooter className="flex justify-between">
