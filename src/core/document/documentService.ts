@@ -1,6 +1,12 @@
 
 import { DocumentData } from '@/types/camera';
 
+// Import the Document type from DataContext since it includes id and createdAt
+type Document = DocumentData & {
+  id: string;
+  createdAt: string;
+};
+
 export class DocumentService {
   static validateDocument(document: Partial<DocumentData>): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
@@ -23,7 +29,7 @@ export class DocumentService {
     };
   }
   
-  static createDocument(data: Omit<DocumentData, 'id' | 'createdAt'>): DocumentData {
+  static createDocument(data: Omit<DocumentData, 'id' | 'createdAt'>): Document {
     return {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
