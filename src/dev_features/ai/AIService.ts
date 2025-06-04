@@ -1,5 +1,4 @@
-
-import { AIModel, AIRequest, AIResponse, DocumentAnalysisResult } from './types';
+import { AIModel, AIRequest, AIResponse, DocumentAnalysisResult, VoiceCommand } from './types';
 
 export abstract class BaseAIService {
   protected models: Map<string, AIModel> = new Map();

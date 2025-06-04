@@ -1,6 +1,14 @@
 
 import { PlatformAdapter, PlatformCapabilities, PlatformType } from './types';
 
+// TypeScript declarations for File System Access API
+declare global {
+  interface Window {
+    showSaveFilePicker?: (options?: any) => Promise<any>;
+    showOpenFilePicker?: (options?: any) => Promise<any>;
+  }
+}
+
 export class WebAdapter implements PlatformAdapter {
   type: PlatformType = 'web';
   
@@ -16,9 +24,9 @@ export class WebAdapter implements PlatformAdapter {
   
   async saveFile(data: Blob, filename: string): Promise<boolean> {
     try {
-      if (this.capabilities.hasFileSystem) {
+      if (this.capabilities.hasFileSystem && window.showSaveFilePicker) {
         // Use File System Access API if available
-        const fileHandle = await (window as any).showSaveFilePicker({
+        const fileHandle = await window.showSaveFilePicker({
           suggestedName: filename,
           types: [{
             description: 'Files',
@@ -50,8 +58,8 @@ export class WebAdapter implements PlatformAdapter {
   
   async readFile(filename: string): Promise<Blob | null> {
     try {
-      if (this.capabilities.hasFileSystem) {
-        const [fileHandle] = await (window as any).showOpenFilePicker();
+      if (this.capabilities.hasFileSystem && window.showOpenFilePicker) {
+        const [fileHandle] = await window.showOpenFilePicker();
         const file = await fileHandle.getFile();
         return file;
       } else {
