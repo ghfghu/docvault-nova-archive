@@ -1,73 +1,179 @@
-# Welcome to your Lovable project
 
-## Project info
+# DocVault - Modern Document Management System
 
-**URL**: https://lovable.dev/projects/b82ac810-2632-465b-a312-7d567437944c
+A modern, offline-first document archiving and management web application built with React and TypeScript. DocVault provides secure, local document storage and management without requiring internet connectivity.
 
-## How can I edit this code?
+## 🚀 Features
 
-There are several ways of editing your application.
+### Core Functionality
+- **📸 Smart Document Scanning** - Capture documents with front/back support
+- **🔐 Secure Local Storage** - All data stored locally in browser storage
+- **📁 Document Organization** - Categorize by type, priority, and custom tags
+- **🔍 Advanced Search** - Find documents quickly with intelligent filtering
+- **📊 Visual Dashboard** - Overview of document statistics and recent activity
+- **📋 Wanted Persons Database** - Track persons of interest with document references
 
-**Use Lovable**
+### User Experience
+- **🌍 Multi-Language Support** - English and Arabic localization
+- **📱 Responsive Design** - Works seamlessly on desktop and mobile
+- **🎨 Modern UI** - Clean interface built with Tailwind CSS and shadcn/ui
+- **⚡ Real-time Updates** - Instant feedback with toast notifications
+- **🌙 Dark/Light Theme** - Customizable appearance settings
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b82ac810-2632-465b-a312-7d567437944c) and start prompting.
+### Data Management
+- **💾 Local Data Persistence** - Browser localStorage for offline operation
+- **📤 Export/Import** - Backup and restore functionality
+- **🔄 Sample Data** - Quick setup with demonstration data
+- **🗑️ Data Management** - Clear all data option for fresh starts
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Technology Stack
 
-**Use your preferred IDE**
+### Frontend Framework
+- **React 18** - Modern React with hooks and functional components
+- **TypeScript** - Type-safe development
+- **Vite** - Fast development and build tooling
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### UI & Styling
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - High-quality component library
+- **Lucide React** - Beautiful icon library
+- **Radix UI** - Accessible component primitives
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### State Management & Data
+- **React Query (TanStack)** - Data fetching and caching
+- **React Context** - Global state management
+- **React Router** - Client-side routing
+- **React Hook Form** - Form handling and validation
 
-Follow these steps:
+### Development Tools
+- **ESLint** - Code linting
+- **PostCSS** - CSS processing
+- **date-fns** - Date manipulation utilities
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 📁 Project Structure
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+├── components/          # Reusable UI components
+│   ├── document/       # Document-specific components
+│   └── ui/             # shadcn/ui components
+├── context/            # React context providers
+├── core/               # Core business logic
+├── hooks/              # Custom React hooks
+├── pages/              # Page components
+├── types/              # TypeScript type definitions
+├── translations/       # Internationalization files
+└── utils/              # Utility functions
 ```
 
-**Edit a file directly in GitHub**
+## 🚀 Getting Started
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Prerequisites
+- Node.js (version 16 or higher)
+- npm or yarn package manager
 
-**Use GitHub Codespaces**
+### Installation
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd docvault
+   ```
 
-## What technologies are used for this project?
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-This project is built with:
+3. **Start development server**
+   ```bash
+   npm run dev
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+4. **Open your browser**
+   Navigate to `http://localhost:5173`
 
-## How can I deploy this project?
+### Build for Production
 
-Simply open [Lovable](https://lovable.dev/projects/b82ac810-2632-465b-a312-7d567437944c) and click on Share -> Publish.
+```bash
+npm run build
+```
 
-## Can I connect a custom domain to my Lovable project?
+The built files will be in the `dist/` directory.
 
-Yes, you can!
+## 📖 Usage
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Adding Documents
+1. Navigate to the **Scan Document** page
+2. Use the camera interface to capture document images
+3. Fill in document details (name, type, priority, notes)
+4. Save the document to your local archive
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Managing Documents
+- **View All Documents** - Browse your complete document library
+- **Search & Filter** - Find specific documents quickly
+- **Edit Details** - Update document information
+- **Delete Documents** - Remove unwanted entries
+
+### Dashboard Overview
+- View document statistics and trends
+- See recent activity
+- Quick access to common actions
+
+### Settings & Preferences
+- Toggle dark/light theme
+- Change language (English/Arabic)
+- Export/import data
+- Clear all data
+
+## 🌐 Deployment
+
+### Web Hosting
+The application can be deployed to any static hosting service:
+- **Vercel** - Recommended for React applications
+- **Netlify** - Easy deployment with git integration
+- **GitHub Pages** - Free hosting for open source projects
+
+### Local Network Deployment
+For air-gapped or local network environments:
+1. Build the application
+2. Serve the `dist/` folder with any web server
+3. Access via local IP address
+
+## 🔧 Configuration
+
+### Environment Variables
+No environment variables are required for basic operation. All data is stored locally in the browser.
+
+### Customization
+- **Themes** - Modify Tailwind configuration for custom styling
+- **Languages** - Add new translations in `src/translations/`
+- **Document Types** - Extend document categories in the codebase
+
+## 🤝 Contributing
+
+We welcome contributions! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+## 🔮 Future Enhancements
+
+- **AI Integration** - Document categorization and OCR
+- **Cloud Sync** - Optional cloud backup capabilities
+- **Advanced Analytics** - Detailed reporting and insights
+- **Mobile App** - Native mobile companion application
+- **Plugin System** - Extensible architecture for custom features
+
+## 📞 Support
+
+For questions, issues, or feature requests, please open an issue on the project repository.
+
+---
+
+**DocVault** - Secure, Modern, Offline-First Document Management
