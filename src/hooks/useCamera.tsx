@@ -1,5 +1,6 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
+import { ExtendedMediaTrackCapabilities, MediaTrackConstraintsWithTorch } from '@/types/camera';
 
 export interface UseCameraReturn {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -53,7 +54,7 @@ export const useCamera = (): UseCameraReturn => {
     return baseConstraints;
   }, []);
 
-  const startCamera = useCallback(async () => {
+  const startCamera = useCallback(async (): Promise<void> => {
     if (cameraInitializing || cameraActive) return;
     
     console.log('Starting camera...');
@@ -87,7 +88,7 @@ export const useCamera = (): UseCameraReturn => {
           // Check for flash support
           const videoTrack = stream.getVideoTracks()[0];
           if (videoTrack) {
-            const capabilities = videoTrack.getCapabilities?.();
+            const capabilities = videoTrack.getCapabilities?.() as ExtendedMediaTrackCapabilities;
             if (capabilities?.torch) {
               setFlashSupported(true);
               console.log('Flash/torch supported');
@@ -98,11 +99,14 @@ export const useCamera = (): UseCameraReturn => {
         videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
         
         // Cleanup function for the event listener
-        return () => {
+        const cleanup = () => {
           if (videoRef.current) {
             videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
           }
         };
+        
+        // Store cleanup function for later use
+        return cleanup;
       }
     } catch (error) {
       console.error('Camera access error:', error);
@@ -193,9 +197,10 @@ export const useCamera = (): UseCameraReturn => {
     try {
       const videoTrack = streamRef.current.getVideoTracks()[0];
       if (videoTrack) {
-        await videoTrack.applyConstraints({
+        const constraints: MediaTrackConstraintsWithTorch = {
           advanced: [{ torch: !flashEnabled }]
-        });
+        };
+        await videoTrack.applyConstraints(constraints);
         setFlashEnabled(!flashEnabled);
         console.log(`Flash ${!flashEnabled ? 'enabled' : 'disabled'}`);
       }
