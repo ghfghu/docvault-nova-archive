@@ -1,278 +1,238 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
-import { MediaTrackConstraintsWithTorch } from '@/types/camera';
 
 export interface UseCameraReturn {
   videoRef: React.RefObject<HTMLVideoElement>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  stream: MediaStream | null;
-  flashEnabled: boolean;
   cameraActive: boolean;
-  flashSupported: boolean;
   videoLoaded: boolean;
   cameraInitializing: boolean;
+  flashSupported: boolean;
+  flashEnabled: boolean;
   startCamera: () => Promise<void>;
   stopCamera: () => void;
-  resetCamera: () => void;
-  toggleFlash: () => Promise<void>;
   captureImage: () => string | null;
+  toggleFlash: () => void;
+  resetCamera: () => void;
 }
 
 export const useCamera = (): UseCameraReturn => {
-  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [flashEnabled, setFlashEnabled] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
+  
   const [cameraActive, setCameraActive] = useState(false);
-  const [flashSupported, setFlashSupported] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [cameraInitializing, setCameraInitializing] = useState(false);
+  const [flashSupported, setFlashSupported] = useState(false);
+  const [flashEnabled, setFlashEnabled] = useState(false);
 
-  // Function to handle video element loaded
-  const handleVideoLoaded = useCallback(() => {
-    console.log('Video loaded successfully');
-    setVideoLoaded(true);
-  }, []);
+  // Enhanced camera constraints for mobile
+  const getCameraConstraints = useCallback(() => {
+    const baseConstraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920, min: 640 },
+        height: { ideal: 1080, min: 480 },
+        aspectRatio: { ideal: 16/9 }
+      },
+      audio: false
+    };
 
-  // Effect to add and remove event listener for video loaded
-  useEffect(() => {
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      videoElement.addEventListener('loadeddata', handleVideoLoaded);
-      return () => {
-        videoElement.removeEventListener('loadeddata', handleVideoLoaded);
+    // Add mobile-specific constraints
+    if (window.Capacitor?.isNativePlatform()) {
+      return {
+        ...baseConstraints,
+        video: {
+          ...baseConstraints.video,
+          frameRate: { ideal: 30, max: 30 }
+        }
       };
     }
-  }, [handleVideoLoaded, cameraActive]);
 
-  // Clean up resources when component unmounts
-  useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+    return baseConstraints;
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    if (cameraInitializing || cameraActive) return;
+    
+    console.log('Starting camera...');
+    setCameraInitializing(true);
+    setVideoLoaded(false);
+
+    try {
+      // Check for camera permissions on mobile
+      if (window.Capacitor?.isNativePlatform()) {
+        // Add a small delay to ensure UI is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-    };
-  }, [stream]);
 
-  // Stop camera function - moved before startCamera to fix dependency error
+      const constraints = getCameraConstraints();
+      console.log('Requesting camera with constraints:', constraints);
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Camera stream obtained successfully');
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        
+        // Handle video loaded event
+        const handleLoadedMetadata = () => {
+          console.log('Video metadata loaded');
+          setVideoLoaded(true);
+          setCameraActive(true);
+          
+          // Check for flash support
+          const videoTrack = stream.getVideoTracks()[0];
+          if (videoTrack) {
+            const capabilities = videoTrack.getCapabilities?.();
+            if (capabilities?.torch) {
+              setFlashSupported(true);
+              console.log('Flash/torch supported');
+            }
+          }
+        };
+        
+        videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+        
+        // Cleanup function for the event listener
+        return () => {
+          if (videoRef.current) {
+            videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Camera access error:', error);
+      setCameraActive(false);
+      setVideoLoaded(false);
+      
+      // More specific error handling for mobile
+      if (error instanceof DOMException) {
+        switch (error.name) {
+          case 'NotAllowedError':
+            console.log('Camera permission denied');
+            break;
+          case 'NotFoundError':
+            console.log('No camera device found');
+            break;
+          case 'NotReadableError':
+            console.log('Camera is in use by another application');
+            break;
+          default:
+            console.log('Camera error:', error.message);
+        }
+      }
+    } finally {
+      setCameraInitializing(false);
+    }
+  }, [cameraInitializing, cameraActive, getCameraConstraints]);
+
   const stopCamera = useCallback(() => {
     console.log('Stopping camera...');
-    if (stream) {
-      stream.getTracks().forEach(track => {
-        console.log('Stopping track:', track.kind);
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
         track.stop();
+        console.log('Camera track stopped');
       });
-      setStream(null);
+      streamRef.current = null;
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     
     setCameraActive(false);
     setVideoLoaded(false);
     setFlashEnabled(false);
-    
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    console.log('Camera stopped');
-  }, [stream]);
+    setFlashSupported(false);
+  }, []);
 
-  // Start camera function with improved error handling and retry logic
-  const startCamera = useCallback(async () => {
+  const captureImage = useCallback((): string | null => {
+    if (!videoRef.current || !canvasRef.current || !videoLoaded) {
+      console.error('Camera not ready for capture');
+      return null;
+    }
+
     try {
-      setCameraInitializing(true);
-      setVideoLoaded(false);
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
       
-      if (stream) {
-        console.log('Camera already started, stopping first');
-        stopCamera();
-        // Wait for cleanup to complete
-        await new Promise(resolve => setTimeout(resolve, 100));
+      if (!context) {
+        console.error('Canvas context not available');
+        return null;
       }
+
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
       
-      console.log('Requesting camera access...');
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
+      console.log(`Capturing image: ${canvas.width}x${canvas.height}`);
       
-      console.log('Camera access granted');
+      // Draw video frame to canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Check if flash is supported
-      const videoTrack = mediaStream.getVideoTracks()[0];
-      const capabilities = videoTrack.getCapabilities() as any;
-      const flashSupport = capabilities?.torch !== undefined;
-      setFlashSupported(flashSupport);
-      console.log('Flash supported:', flashSupport);
+      // Convert to data URL with good quality
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      console.log('Image captured successfully');
       
-      // Set stream first
-      setStream(mediaStream);
-      setCameraActive(true);
-      
-      // Improved video element assignment with better timing
-      const assignStreamToVideo = async () => {
-        let attempts = 0;
-        const maxAttempts = 30; // 3 seconds max
-        
-        while (attempts < maxAttempts) {
-          if (videoRef.current && videoRef.current.parentElement) {
-            console.log('Assigning stream to video element');
-            videoRef.current.srcObject = mediaStream;
-            try {
-              await videoRef.current.play();
-              console.log('Video started playing successfully');
-              break;
-            } catch (err) {
-              console.error('Error playing video:', err);
-            }
-            break;
-          } else {
-            console.log(`Video ref not ready, attempt ${attempts + 1}/${maxAttempts}`);
-            attempts++;
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        }
-        
-        if (attempts >= maxAttempts) {
-          console.error('Failed to assign stream after maximum attempts');
-          setCameraActive(false);
-          setCameraInitializing(false);
-        }
-      };
-      
-      // Start the assignment process
-      assignStreamToVideo();
-      
+      return dataUrl;
     } catch (error) {
-      console.error('Camera start error:', error);
-      setCameraActive(false);
-      toast({
-        title: t('cameraError'),
-        description: t('cameraPermissionError'),
-        variant: 'destructive'
-      });
-    } finally {
-      setCameraInitializing(false);
+      console.error('Image capture error:', error);
+      return null;
     }
-  }, [t, stream, stopCamera]);
+  }, [videoLoaded]);
 
-  // Reset camera function
-  const resetCamera = useCallback(() => {
-    stopCamera();
-    // Small delay to ensure all resources are cleaned up
-    setTimeout(() => {
-      startCamera();
-    }, 300);
-  }, [stopCamera, startCamera]);
-
-  // Toggle flash function
   const toggleFlash = useCallback(async () => {
-    if (!stream || !flashSupported) return;
-    
+    if (!flashSupported || !streamRef.current) return;
+
     try {
-      const videoTrack = stream.getVideoTracks()[0];
-      const newFlashState = !flashEnabled;
-      
-      // Apply torch constraint
-      const constraints: MediaTrackConstraintsWithTorch = {
-        advanced: [{ torch: newFlashState }]
-      };
-      
-      await videoTrack.applyConstraints(constraints);
-      setFlashEnabled(newFlashState);
-      console.log('Flash toggled to:', newFlashState);
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        await videoTrack.applyConstraints({
+          advanced: [{ torch: !flashEnabled }]
+        });
+        setFlashEnabled(!flashEnabled);
+        console.log(`Flash ${!flashEnabled ? 'enabled' : 'disabled'}`);
+      }
     } catch (error) {
       console.error('Flash toggle error:', error);
-      toast({
-        title: t('flashNotSupported'),
-        description: t('deviceNoFlash'),
-        variant: 'destructive'
-      });
     }
-  }, [stream, flashEnabled, flashSupported, t]);
+  }, [flashSupported, flashEnabled]);
 
-  // Capture image function with improved error checking
-  const captureImage = useCallback((): string | null => {
-    console.log('Attempting to capture image...');
-    console.log('Video loaded state:', videoLoaded);
-    console.log('Video element exists:', !!videoRef.current);
-    console.log('Canvas element exists:', !!canvasRef.current);
-    
-    if (!videoRef.current || !canvasRef.current) {
-      console.error('Video or canvas ref is null');
-      toast({
-        title: t('captureError'),
-        description: t('cameraNotReady'),
-        variant: 'destructive'
-      });
-      return null;
-    }
-    
-    if (!videoLoaded || !cameraActive) {
-      console.error('Video not loaded or camera not active');
-      toast({
-        title: t('captureError'),
-        description: t('cameraNotReady'),
-        variant: 'destructive'
-      });
-      return null;
-    }
-    
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    
-    // Check if video has valid dimensions
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      console.error('Video dimensions are invalid:', video.videoWidth, video.videoHeight);
-      toast({
-        title: t('captureError'),
-        description: t('cameraNotReady'),
-        variant: 'destructive'
-      });
-      return null;
-    }
-    
-    console.log('Setting canvas dimensions to:', video.videoWidth, video.videoHeight);
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    // Draw video frame to canvas
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      console.error('Could not get canvas context');
-      return null;
-    }
-    
-    try {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      console.log('Image captured successfully');
-      // Get image data URL
-      return canvas.toDataURL('image/jpeg');
-    } catch (error) {
-      console.error('Canvas to data URL error:', error);
-      toast({
-        title: t('captureError'),
-        description: String(error),
-        variant: 'destructive'
-      });
-      return null;
-    }
-  }, [videoRef, canvasRef, videoLoaded, cameraActive, t]);
+  const resetCamera = useCallback(() => {
+    console.log('Resetting camera...');
+    stopCamera();
+    setTimeout(() => {
+      startCamera();
+    }, 500);
+  }, [stopCamera, startCamera]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   return {
     videoRef,
     canvasRef,
-    stream,
-    flashEnabled,
     cameraActive,
-    flashSupported,
     videoLoaded,
     cameraInitializing,
+    flashSupported,
+    flashEnabled,
     startCamera,
     stopCamera,
-    resetCamera,
+    captureImage,
     toggleFlash,
-    captureImage
+    resetCamera
   };
 };

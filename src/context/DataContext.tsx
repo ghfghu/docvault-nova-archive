@@ -38,6 +38,7 @@ interface DataContextType {
   deleteWantedPerson: (id: string) => void;
   clearAllData: () => void;
   loadSampleData: () => void;
+  loadLargeDataset: () => void;
   exportData: () => string;
   importData: (jsonData: string) => boolean;
   updateSettings: (newSettings: Partial<Settings>) => void;
@@ -67,7 +68,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const storedDocuments = localStorage.getItem('docvault_documents');
     if (storedDocuments) {
       try {
-        setDocuments(JSON.parse(storedDocuments));
+        const parsed = JSON.parse(storedDocuments);
+        console.log(`Loaded ${parsed.length} documents from storage`);
+        setDocuments(parsed);
       } catch (error) {
         console.error('Error parsing stored documents:', error);
         localStorage.removeItem('docvault_documents');
@@ -78,7 +81,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const storedWantedPersons = localStorage.getItem('docvault_wanted_persons');
     if (storedWantedPersons) {
       try {
-        setWantedPersons(JSON.parse(storedWantedPersons));
+        const parsed = JSON.parse(storedWantedPersons);
+        console.log(`Loaded ${parsed.length} wanted persons from storage`);
+        setWantedPersons(parsed);
       } catch (error) {
         console.error('Error parsing stored wanted persons:', error);
         localStorage.removeItem('docvault_wanted_persons');
@@ -97,13 +102,36 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Update localStorage when data changes
+  // Update localStorage when data changes (with batch updates to prevent performance issues)
   useEffect(() => {
-    localStorage.setItem('docvault_documents', JSON.stringify(documents));
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem('docvault_documents', JSON.stringify(documents));
+        console.log(`Saved ${documents.length} documents to storage`);
+      } catch (error) {
+        console.error('Error saving documents to storage:', error);
+        // If storage is full, try to clear some space
+        if (error instanceof DOMException && error.code === 22) {
+          console.warn('Storage quota exceeded, clearing old data');
+          localStorage.removeItem('docvault_documents');
+        }
+      }
+    }, 1000); // Debounce saves
+    
+    return () => clearTimeout(timeoutId);
   }, [documents]);
 
   useEffect(() => {
-    localStorage.setItem('docvault_wanted_persons', JSON.stringify(wantedPersons));
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem('docvault_wanted_persons', JSON.stringify(wantedPersons));
+        console.log(`Saved ${wantedPersons.length} wanted persons to storage`);
+      } catch (error) {
+        console.error('Error saving wanted persons to storage:', error);
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timeoutId);
   }, [wantedPersons]);
 
   useEffect(() => {
@@ -155,35 +183,43 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setWantedPersons([]);
     localStorage.removeItem('docvault_documents');
     localStorage.removeItem('docvault_wanted_persons');
+    console.log('All data cleared');
   };
   
   // Load sample data for testing
   const loadSampleData = () => {
-    const sampleDocuments = generateSampleDocuments().map(doc => ({
+    const { generateSampleDocuments, generateSampleWantedPersons } = require('@/sample-data');
+    
+    const sampleDocuments = generateSampleDocuments(50).map(doc => ({
       ...doc,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       createdAt: new Date().toISOString()
     }));
+    
+    const sampleWantedPersons = generateSampleWantedPersons(25);
+    
     setDocuments(sampleDocuments);
-
-    // Generate some sample wanted persons
-    const sampleWantedPersons: WantedPerson[] = [
-      {
-        id: Date.now().toString() + '1',
-        fullName: 'John Doe',
-        documentNumber: 'ID123456',
-        notes: 'Wanted for questioning regarding case #A12345',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: Date.now().toString() + '2',
-        fullName: 'Jane Smith',
-        documentNumber: 'ID789012',
-        notes: 'Person of interest in ongoing investigation',
-        createdAt: new Date().toISOString()
-      }
-    ];
     setWantedPersons(sampleWantedPersons);
+    
+    console.log(`Loaded ${sampleDocuments.length} sample documents and ${sampleWantedPersons.length} wanted persons`);
+  };
+
+  // Load large dataset for stress testing
+  const loadLargeDataset = () => {
+    const { generateLargeDataset, generateSampleWantedPersons } = require('@/sample-data');
+    
+    const largeDocuments = generateLargeDataset().map(doc => ({
+      ...doc,
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      createdAt: new Date().toISOString()
+    }));
+    
+    const largeWantedPersons = generateSampleWantedPersons(50);
+    
+    setDocuments(largeDocuments);
+    setWantedPersons(largeWantedPersons);
+    
+    console.log(`Loaded ${largeDocuments.length} documents and ${largeWantedPersons.length} wanted persons for stress testing`);
   };
 
   // Export data as JSON
@@ -241,6 +277,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       deleteWantedPerson,
       clearAllData, 
       loadSampleData,
+      loadLargeDataset,
       exportData,
       importData,
       updateSettings

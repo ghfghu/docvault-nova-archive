@@ -2,338 +2,341 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { 
   Settings as SettingsIcon, 
-  User, 
-  Shield, 
-  Languages, 
-  Lightbulb, 
-  HardDrive,
+  Download, 
+  Upload, 
+  Trash2, 
   Database,
-  LogOut
+  Globe,
+  Moon,
+  Sun,
+  Info,
+  AlertTriangle
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
-import Layout from '@/components/Layout';
 import { toast } from '@/components/ui/use-toast';
+import Layout from '@/components/Layout';
 
 const Settings = () => {
-  const { user, logout, appPassword, updateAppPassword } = useAuth();
-  const { settings, updateSettings } = useData();
+  const { 
+    documents, 
+    wantedPersons, 
+    settings, 
+    clearAllData, 
+    loadSampleData, 
+    loadLargeDataset,
+    exportData, 
+    importData, 
+    updateSettings 
+  } = useData();
   
-  const [newAppPassword, setNewAppPassword] = useState('');
-  
-  // Handle app password change
-  const handleAppPasswordChange = () => {
-    if (!newAppPassword) {
+  const [importText, setImportText] = useState('');
+
+  const handleExport = () => {
+    try {
+      const data = exportData();
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `docvault-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
       toast({
-        title: "Invalid password",
-        description: "Please enter a new app password",
+        title: "Data Exported",
+        description: "Your data has been exported successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export data",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleImport = () => {
+    if (!importText.trim()) {
+      toast({
+        title: "Import Error",
+        description: "Please paste your backup data",
         variant: "destructive"
       });
       return;
     }
-    
-    updateAppPassword(newAppPassword);
-    setNewAppPassword('');
-  };
-  
-  // Clear all user data
-  const handleClearData = () => {
-    if (confirm('Are you sure you want to clear all your data? This action cannot be undone.')) {
-      // In a real app, we would clear all data from storage
+
+    const success = importData(importText);
+    if (success) {
       toast({
-        title: "Data cleared",
-        description: "All your data has been deleted"
+        title: "Data Imported",
+        description: "Your data has been imported successfully"
+      });
+      setImportText('');
+    } else {
+      toast({
+        title: "Import Failed",
+        description: "Invalid backup data format",
+        variant: "destructive"
       });
     }
   };
-  
-  // Format storage usage (this is just a placeholder in the demo)
-  const formatStorage = () => {
-    // In a real app, we would calculate actual storage usage
-    return {
-      used: '2.3 MB',
-      total: 'Unlimited',
-      percent: 5
-    };
+
+  const handleClearData = () => {
+    if (confirm('Are you sure you want to delete all data? This action cannot be undone.')) {
+      clearAllData();
+      toast({
+        title: "Data Cleared",
+        description: "All data has been deleted"
+      });
+    }
   };
-  
-  const storage = formatStorage();
-  
+
+  const handleLoadSampleData = () => {
+    if (documents.length > 0 || wantedPersons.length > 0) {
+      if (!confirm('This will replace your current data. Continue?')) {
+        return;
+      }
+    }
+    
+    loadSampleData();
+    toast({
+      title: "Sample Data Loaded",
+      description: "50 sample documents and 25 wanted persons added"
+    });
+  };
+
+  const handleLoadLargeDataset = () => {
+    if (documents.length > 0 || wantedPersons.length > 0) {
+      if (!confirm('This will replace your current data with a large dataset for testing. This may impact performance. Continue?')) {
+        return;
+      }
+    }
+    
+    loadLargeDataset();
+    toast({
+      title: "Large Dataset Loaded",
+      description: "200 documents and 50 wanted persons added for stress testing"
+    });
+  };
+
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto animate-fade-in">
+      <div className="max-w-4xl mx-auto animate-fade-in">
         <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gradient">Settings</h1>
+          <h1 className="text-2xl font-bold text-gradient flex items-center">
+            <SettingsIcon className="mr-2 text-docvault-accent" size={24} />
+            Settings
+          </h1>
           <p className="text-docvault-gray text-sm">
-            Customize your DocVault experience
+            Manage your application preferences and data
           </p>
         </header>
-        
-        <Tabs defaultValue="general">
-          <TabsList className="grid grid-cols-4 mb-6">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="storage">Storage</TabsTrigger>
-            <TabsTrigger value="account">Account</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="general">
-            <Card className="glass-card mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <SettingsIcon className="mr-2 text-docvault-accent" size={20} />
-                  Appearance
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="darkMode">Dark Mode</Label>
-                    <p className="text-sm text-docvault-gray">
-                      Use dark theme for the application
-                    </p>
-                  </div>
-                  <Switch
-                    id="darkMode"
-                    checked={settings.darkMode}
-                    onCheckedChange={(checked) => updateSettings({ darkMode: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Languages className="mr-2 text-docvault-accent" size={20} />
-                  Language & Region
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="language">Application Language</Label>
-                  <Select
-                    value={settings.language}
-                    onValueChange={(value: 'en' | 'es' | 'fr') => updateSettings({ language: value })}
-                  >
-                    <SelectTrigger className="bg-docvault-dark/50 border-docvault-accent/30 mt-1">
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Spanish</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Lightbulb className="mr-2 text-docvault-accent" size={20} />
-                  User Experience
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="showOnboarding">Onboarding Instructions</Label>
-                    <p className="text-sm text-docvault-gray">
-                      Show instructions for new users
-                    </p>
-                  </div>
-                  <Switch
-                    id="showOnboarding"
-                    checked={settings.showOnboarding}
-                    onCheckedChange={(checked) => updateSettings({ showOnboarding: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="enableAutoFill">Auto-Fill Presets</Label>
-                    <p className="text-sm text-docvault-gray">
-                      Enable auto-fill in document forms
-                    </p>
-                  </div>
-                  <Switch
-                    id="enableAutoFill"
-                    checked={settings.enableAutoFill}
-                    onCheckedChange={(checked) => updateSettings({ enableAutoFill: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="enableAssistantTips">Assistant Tips</Label>
-                    <p className="text-sm text-docvault-gray">
-                      Show helpful tips while using the app
-                    </p>
-                  </div>
-                  <Switch
-                    id="enableAssistantTips"
-                    checked={settings.enableAssistantTips}
-                    onCheckedChange={(checked) => updateSettings({ enableAssistantTips: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="security">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Shield className="mr-2 text-docvault-accent" size={20} />
-                  App Password
-                </CardTitle>
-                <CardDescription>
-                  Set an app-wide password that's required each time you open the app
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="currentPassword">Current App Password</Label>
-                  <Input
-                    id="currentPassword"
-                    type="text"
-                    value={appPassword}
-                    readOnly
-                    className="bg-docvault-dark/50 border-docvault-accent/30 mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="newPassword">New App Password</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={newAppPassword}
-                    onChange={(e) => setNewAppPassword(e.target.value)}
-                    placeholder="Enter new app password"
-                    className="bg-docvault-dark/50 border-docvault-accent/30 mt-1"
-                  />
-                  <p className="text-xs text-docvault-gray mt-1">
-                    This password will be required every time the app is opened
-                  </p>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="bg-docvault-accent hover:bg-docvault-accent/80"
-                  onClick={handleAppPasswordChange}
-                  disabled={!newAppPassword}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* App Preferences */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Globe className="mr-2" size={20} />
+                App Preferences
+              </CardTitle>
+              <CardDescription>Customize your app experience</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="dark-mode" className="flex items-center">
+                  {settings.darkMode ? <Moon className="mr-2" size={16} /> : <Sun className="mr-2" size={16} />}
+                  Dark Mode
+                </Label>
+                <Switch
+                  id="dark-mode"
+                  checked={settings.darkMode}
+                  onCheckedChange={(checked) => updateSettings({ darkMode: checked })}
+                />
+              </div>
+              
+              <Separator className="bg-docvault-accent/20" />
+              
+              <div className="space-y-2">
+                <Label htmlFor="language">Language</Label>
+                <Select 
+                  value={settings.language} 
+                  onValueChange={(value) => updateSettings({ language: value as any })}
                 >
-                  Update App Password
+                  <SelectTrigger className="bg-docvault-dark/50 border-docvault-accent/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Español</SelectItem>
+                    <SelectItem value="fr">Français</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Separator className="bg-docvault-accent/20" />
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="onboarding">Show Onboarding</Label>
+                <Switch
+                  id="onboarding"
+                  checked={settings.showOnboarding}
+                  onCheckedChange={(checked) => updateSettings({ showOnboarding: checked })}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="autofill">Enable Auto-fill</Label>
+                <Switch
+                  id="autofill"
+                  checked={settings.enableAutoFill}
+                  onCheckedChange={(checked) => updateSettings({ enableAutoFill: checked })}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="tips">Assistant Tips</Label>
+                <Switch
+                  id="tips"
+                  checked={settings.enableAssistantTips}
+                  onCheckedChange={(checked) => updateSettings({ enableAssistantTips: checked })}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Data Management */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Database className="mr-2" size={20} />
+                Data Management
+              </CardTitle>
+              <CardDescription>
+                Manage your documents and database
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-docvault-gray mb-4">
+                <p>Documents: <span className="text-docvault-accent font-medium">{documents.length}</span></p>
+                <p>Wanted Persons: <span className="text-docvault-accent font-medium">{wantedPersons.length}</span></p>
+              </div>
+              
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleLoadSampleData}
+                  className="w-full bg-docvault-accent hover:bg-docvault-accent/80"
+                >
+                  <Database className="mr-2" size={16} />
+                  Load Sample Data (50 items)
                 </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="storage">
-            <Card className="glass-card mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <HardDrive className="mr-2 text-docvault-accent" size={20} />
-                  Storage Usage
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Used: {storage.used}</span>
-                    <span>Total: {storage.total}</span>
-                  </div>
-                  <div className="w-full h-2 bg-docvault-dark rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-docvault-accent"
-                      style={{ width: `${storage.percent}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-docvault-gray mt-1">
-                    Using {storage.percent}% of available storage
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Database className="mr-2 text-docvault-accent" size={20} />
-                  Data Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Clear All Data</Label>
-                  <p className="text-sm text-docvault-gray mb-2">
-                    This will permanently delete all your documents and data
-                  </p>
-                  <Button 
-                    variant="destructive"
-                    onClick={handleClearData}
-                  >
-                    Clear All Data
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="account">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="mr-2 text-docvault-accent" size={20} />
-                  Your Account
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Username</Label>
-                  <p className="font-medium text-lg text-docvault-accent">{user?.username}</p>
+                
+                <Button 
+                  onClick={handleLoadLargeDataset}
+                  className="w-full bg-orange-600 hover:bg-orange-700"
+                >
+                  <Database className="mr-2" size={16} />
+                  Load Large Dataset (200 items)
+                </Button>
+                
+                <div className="flex items-center text-xs text-yellow-400 mb-2">
+                  <AlertTriangle className="mr-1" size={12} />
+                  Large datasets may impact performance on mobile devices
                 </div>
                 
-                <div className="pt-4">
-                  <Button 
-                    variant="destructive"
-                    className="w-full sm:w-auto"
-                    onClick={logout}
-                  >
-                    <LogOut className="mr-2" size={18} />
-                    Log Out
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-        
-        <div className="mt-8 text-center text-docvault-gray text-xs">
-          <p>DocVault - Secure Document Archiving</p>
-          <p className="mt-1">Version 1.0.0</p>
+                <Button 
+                  onClick={handleClearData}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  <Trash2 className="mr-2" size={16} />
+                  Clear All Data
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Backup & Restore */}
+          <Card className="glass-card lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Download className="mr-2" size={20} />
+                Backup & Restore
+              </CardTitle>
+              <CardDescription>
+                Export your data or import from a backup
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={handleExport}
+                  className="flex-1 bg-docvault-accent hover:bg-docvault-accent/80"
+                >
+                  <Download className="mr-2" size={16} />
+                  Export Data
+                </Button>
+                
+                <Button 
+                  onClick={handleImport}
+                  variant="outline"
+                  className="flex-1 border-docvault-accent/30"
+                  disabled={!importText.trim()}
+                >
+                  <Upload className="mr-2" size={16} />
+                  Import Data
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="import-data">Import Backup Data</Label>
+                <Textarea
+                  id="import-data"
+                  placeholder="Paste your exported backup data here..."
+                  value={importText}
+                  onChange={(e) => setImportText(e.target.value)}
+                  className="bg-docvault-dark/50 border-docvault-accent/30 h-32"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Info Section */}
+        <Card className="glass-card mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Info className="mr-2" size={20} />
+              About DocVault
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <h4 className="font-medium text-docvault-accent mb-1">Version</h4>
+                <p className="text-docvault-gray">1.0.0</p>
+              </div>
+              <div>
+                <h4 className="font-medium text-docvault-accent mb-1">Build</h4>
+                <p className="text-docvault-gray">Mobile Optimized</p>
+              </div>
+              <div>
+                <h4 className="font-medium text-docvault-accent mb-1">Storage</h4>
+                <p className="text-docvault-gray">Local Device</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
