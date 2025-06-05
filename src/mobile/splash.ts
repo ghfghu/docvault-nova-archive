@@ -1,4 +1,5 @@
 
+
 export const initializeMobileSplash = () => {
   // Mobile-specific initialization
   if (window.Capacitor?.isNativePlatform()) {
@@ -16,3 +17,4 @@ export const initializeMobileSplash = () => {
     }, 1000);
   }
 };
+
