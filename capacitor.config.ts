@@ -6,9 +6,21 @@ const config: CapacitorConfig = {
   appName: 'docvault-nova-archive',
   webDir: 'dist',
   bundledWebRuntime: false,
-  server: {
-    url: "https://b82ac810-2632-465b-a312-7d567437944c.lovableproject.com?forceHideBadge=true",
-    cleartext: true
+  // Removed server config for offline operation
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: "#1a1a2e",
+      showSpinner: false
+    },
+    Camera: {
+      permissions: ['camera', 'photos']
+    }
   }
 };
 

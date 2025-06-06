@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DocumentData } from '@/types/camera';
 import { generateSampleDocuments } from '@/sample-data';
+import { localDatabase } from '@/services/LocalDatabase';
 
 // Define types for documents and wanted persons
 export interface Document extends DocumentData {
@@ -24,6 +25,8 @@ export interface Settings {
   showOnboarding: boolean;
   enableAutoFill: boolean;
   enableAssistantTips: boolean;
+  offlineMode: boolean;
+  aiProcessingEnabled: boolean;
 }
 
 // Define the context type
@@ -31,6 +34,7 @@ interface DataContextType {
   documents: Document[];
   wantedPersons: WantedPerson[];
   settings: Settings;
+  isLoading: boolean;
   addDocument: (document: DocumentData) => void;
   deleteDocument: (id: string) => void;
   addWantedPerson: (person: Omit<WantedPerson, 'id' | 'createdAt'>) => void;
@@ -39,8 +43,8 @@ interface DataContextType {
   clearAllData: () => void;
   loadSampleData: () => void;
   loadLargeDataset: () => void;
-  exportData: () => string;
-  importData: (jsonData: string) => boolean;
+  exportData: () => Promise<string>;
+  importData: (jsonData: string) => Promise<boolean>;
   updateSettings: (newSettings: Partial<Settings>) => void;
 }
 
@@ -53,7 +57,9 @@ const defaultSettings: Settings = {
   language: 'en',
   showOnboarding: true,
   enableAutoFill: true,
-  enableAssistantTips: true
+  enableAssistantTips: true,
+  offlineMode: true,
+  aiProcessingEnabled: true
 };
 
 // Provider component
@@ -61,129 +67,158 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [wantedPersons, setWantedPersons] = useState<WantedPerson[]>([]);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from localStorage on initial render
+  // Initialize local database and load data
   useEffect(() => {
-    // Load documents
-    const storedDocuments = localStorage.getItem('docvault_documents');
-    if (storedDocuments) {
+    const initializeData = async () => {
       try {
-        const parsed = JSON.parse(storedDocuments);
-        console.log(`Loaded ${parsed.length} documents from storage`);
-        setDocuments(parsed);
-      } catch (error) {
-        console.error('Error parsing stored documents:', error);
-        localStorage.removeItem('docvault_documents');
-      }
-    }
+        setIsLoading(true);
+        
+        // Initialize local database
+        await localDatabase.initialize();
+        console.log('Local database initialized');
 
-    // Load wanted persons
-    const storedWantedPersons = localStorage.getItem('docvault_wanted_persons');
-    if (storedWantedPersons) {
-      try {
-        const parsed = JSON.parse(storedWantedPersons);
-        console.log(`Loaded ${parsed.length} wanted persons from storage`);
-        setWantedPersons(parsed);
-      } catch (error) {
-        console.error('Error parsing stored wanted persons:', error);
-        localStorage.removeItem('docvault_wanted_persons');
-      }
-    }
+        // Load documents
+        const storedDocuments = await localDatabase.getAllDocuments();
+        setDocuments(storedDocuments);
+        console.log(`Loaded ${storedDocuments.length} documents from local database`);
 
-    // Load settings
-    const storedSettings = localStorage.getItem('docvault_settings');
-    if (storedSettings) {
-      try {
-        setSettings({...defaultSettings, ...JSON.parse(storedSettings)});
+        // Load wanted persons
+        const storedWantedPersons = await localDatabase.getAllWantedPersons();
+        setWantedPersons(storedWantedPersons);
+        console.log(`Loaded ${storedWantedPersons.length} wanted persons from local database`);
+
+        // Load settings
+        const storedSettings = await localDatabase.getSettings();
+        if (storedSettings) {
+          setSettings({ ...defaultSettings, ...storedSettings });
+        }
+
       } catch (error) {
-        console.error('Error parsing stored settings:', error);
-        localStorage.removeItem('docvault_settings');
+        console.error('Error initializing data:', error);
+        // Fallback to localStorage if database fails
+        try {
+          const documentsFromStorage = localStorage.getItem('docvault_documents');
+          if (documentsFromStorage) {
+            setDocuments(JSON.parse(documentsFromStorage));
+          }
+          
+          const personsFromStorage = localStorage.getItem('docvault_wanted_persons');
+          if (personsFromStorage) {
+            setWantedPersons(JSON.parse(personsFromStorage));
+          }
+        } catch (fallbackError) {
+          console.error('Fallback to localStorage also failed:', fallbackError);
+        }
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    initializeData();
   }, []);
 
-  // Update localStorage when data changes (with batch updates to prevent performance issues)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      try {
-        localStorage.setItem('docvault_documents', JSON.stringify(documents));
-        console.log(`Saved ${documents.length} documents to storage`);
-      } catch (error) {
-        console.error('Error saving documents to storage:', error);
-        // If storage is full, try to clear some space
-        if (error instanceof DOMException && error.code === 22) {
-          console.warn('Storage quota exceeded, clearing old data');
-          localStorage.removeItem('docvault_documents');
-        }
-      }
-    }, 1000); // Debounce saves
-    
-    return () => clearTimeout(timeoutId);
-  }, [documents]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      try {
-        localStorage.setItem('docvault_wanted_persons', JSON.stringify(wantedPersons));
-        console.log(`Saved ${wantedPersons.length} wanted persons to storage`);
-      } catch (error) {
-        console.error('Error saving wanted persons to storage:', error);
-      }
-    }, 1000);
-    
-    return () => clearTimeout(timeoutId);
-  }, [wantedPersons]);
-
-  useEffect(() => {
-    localStorage.setItem('docvault_settings', JSON.stringify(settings));
-  }, [settings]);
-
   // Add a new document
-  const addDocument = (document: DocumentData) => {
+  const addDocument = async (document: DocumentData) => {
     const newDocument: Document = {
       ...document,
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       createdAt: new Date().toISOString()
     };
-    setDocuments(prevDocuments => [...prevDocuments, newDocument]);
+    
+    try {
+      await localDatabase.addDocument(newDocument);
+      setDocuments(prevDocuments => [...prevDocuments, newDocument]);
+      console.log('Document added to local database');
+    } catch (error) {
+      console.error('Failed to add document to database:', error);
+      // Fallback to state only
+      setDocuments(prevDocuments => [...prevDocuments, newDocument]);
+    }
   };
 
   // Delete a document
-  const deleteDocument = (id: string) => {
-    setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== id));
+  const deleteDocument = async (id: string) => {
+    try {
+      await localDatabase.deleteDocument(id);
+      setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== id));
+      console.log('Document deleted from local database');
+    } catch (error) {
+      console.error('Failed to delete document from database:', error);
+      // Fallback to state only
+      setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== id));
+    }
   };
 
   // Add a new wanted person
-  const addWantedPerson = (person: Omit<WantedPerson, 'id' | 'createdAt'>) => {
+  const addWantedPerson = async (person: Omit<WantedPerson, 'id' | 'createdAt'>) => {
     const newPerson: WantedPerson = {
       ...person,
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       createdAt: new Date().toISOString()
     };
-    setWantedPersons(prevPersons => [...prevPersons, newPerson]);
+    
+    try {
+      await localDatabase.addWantedPerson(newPerson);
+      setWantedPersons(prevPersons => [...prevPersons, newPerson]);
+      console.log('Wanted person added to local database');
+    } catch (error) {
+      console.error('Failed to add wanted person to database:', error);
+      setWantedPersons(prevPersons => [...prevPersons, newPerson]);
+    }
   };
 
   // Update a wanted person
-  const updateWantedPerson = (id: string, data: Omit<WantedPerson, 'id' | 'createdAt'>) => {
-    setWantedPersons(prevPersons => 
-      prevPersons.map(person => 
-        person.id === id ? { ...person, ...data } : person
-      )
-    );
+  const updateWantedPerson = async (id: string, data: Omit<WantedPerson, 'id' | 'createdAt'>) => {
+    const updatedPerson = { 
+      ...data, 
+      id, 
+      createdAt: wantedPersons.find(p => p.id === id)?.createdAt || new Date().toISOString() 
+    };
+    
+    try {
+      await localDatabase.updateWantedPerson(id, updatedPerson);
+      setWantedPersons(prevPersons => 
+        prevPersons.map(person => 
+          person.id === id ? updatedPerson : person
+        )
+      );
+      console.log('Wanted person updated in local database');
+    } catch (error) {
+      console.error('Failed to update wanted person in database:', error);
+      setWantedPersons(prevPersons => 
+        prevPersons.map(person => 
+          person.id === id ? updatedPerson : person
+        )
+      );
+    }
   };
 
   // Delete a wanted person
-  const deleteWantedPerson = (id: string) => {
-    setWantedPersons(prevPersons => prevPersons.filter(person => person.id !== id));
+  const deleteWantedPerson = async (id: string) => {
+    try {
+      await localDatabase.deleteWantedPerson(id);
+      setWantedPersons(prevPersons => prevPersons.filter(person => person.id !== id));
+      console.log('Wanted person deleted from local database');
+    } catch (error) {
+      console.error('Failed to delete wanted person from database:', error);
+      setWantedPersons(prevPersons => prevPersons.filter(person => person.id !== id));
+    }
   };
 
   // Clear all data
-  const clearAllData = () => {
-    setDocuments([]);
-    setWantedPersons([]);
-    localStorage.removeItem('docvault_documents');
-    localStorage.removeItem('docvault_wanted_persons');
-    console.log('All data cleared');
+  const clearAllData = async () => {
+    try {
+      await localDatabase.clearAllData();
+      setDocuments([]);
+      setWantedPersons([]);
+      console.log('All data cleared from local database');
+    } catch (error) {
+      console.error('Failed to clear data from database:', error);
+      setDocuments([]);
+      setWantedPersons([]);
+    }
   };
   
   // Load sample data for testing
@@ -192,16 +227,25 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     
     const sampleDocuments = generateSampleDocuments(50).map(doc => ({
       ...doc,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       createdAt: new Date().toISOString()
     }));
     
     const sampleWantedPersons = generateSampleWantedPersons(25);
     
-    setDocuments(sampleDocuments);
-    setWantedPersons(sampleWantedPersons);
-    
-    console.log(`Loaded ${sampleDocuments.length} sample documents and ${sampleWantedPersons.length} wanted persons`);
+    // Save to database and update state
+    Promise.all([
+      ...sampleDocuments.map(doc => localDatabase.addDocument(doc)),
+      ...sampleWantedPersons.map(person => localDatabase.addWantedPerson(person))
+    ]).then(() => {
+      setDocuments(sampleDocuments);
+      setWantedPersons(sampleWantedPersons);
+      console.log(`Loaded ${sampleDocuments.length} sample documents and ${sampleWantedPersons.length} wanted persons`);
+    }).catch(error => {
+      console.error('Failed to save sample data to database:', error);
+      setDocuments(sampleDocuments);
+      setWantedPersons(sampleWantedPersons);
+    });
   };
 
   // Load large dataset for stress testing
@@ -210,47 +254,63 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     
     const largeDocuments = generateLargeDataset().map(doc => ({
       ...doc,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       createdAt: new Date().toISOString()
     }));
     
     const largeWantedPersons = generateSampleWantedPersons(50);
     
-    setDocuments(largeDocuments);
-    setWantedPersons(largeWantedPersons);
-    
-    console.log(`Loaded ${largeDocuments.length} documents and ${largeWantedPersons.length} wanted persons for stress testing`);
+    // Save to database and update state
+    Promise.all([
+      ...largeDocuments.map(doc => localDatabase.addDocument(doc)),
+      ...largeWantedPersons.map(person => localDatabase.addWantedPerson(person))
+    ]).then(() => {
+      setDocuments(largeDocuments);
+      setWantedPersons(largeWantedPersons);
+      console.log(`Loaded ${largeDocuments.length} documents and ${largeWantedPersons.length} wanted persons for stress testing`);
+    }).catch(error => {
+      console.error('Failed to save large dataset to database:', error);
+      setDocuments(largeDocuments);
+      setWantedPersons(largeWantedPersons);
+    });
   };
 
   // Export data as JSON
-  const exportData = () => {
-    const data = {
-      documents,
-      wantedPersons,
-      settings,
-      exportDate: new Date().toISOString()
-    };
-    return JSON.stringify(data, null, 2);
+  const exportData = async (): Promise<string> => {
+    try {
+      return await localDatabase.exportData();
+    } catch (error) {
+      console.error('Failed to export from database:', error);
+      // Fallback to current state
+      const data = {
+        documents,
+        wantedPersons,
+        settings,
+        exportDate: new Date().toISOString()
+      };
+      return JSON.stringify(data, null, 2);
+    }
   };
 
   // Import data from JSON
-  const importData = (jsonData: string): boolean => {
+  const importData = async (jsonData: string): Promise<boolean> => {
     try {
-      const data = JSON.parse(jsonData);
-      
-      if (data.documents && Array.isArray(data.documents)) {
-        setDocuments(data.documents);
+      const success = await localDatabase.importData(jsonData);
+      if (success) {
+        // Reload data from database
+        const [newDocuments, newPersons, newSettings] = await Promise.all([
+          localDatabase.getAllDocuments(),
+          localDatabase.getAllWantedPersons(),
+          localDatabase.getSettings()
+        ]);
+        
+        setDocuments(newDocuments);
+        setWantedPersons(newPersons);
+        if (newSettings) {
+          setSettings({ ...defaultSettings, ...newSettings });
+        }
       }
-      
-      if (data.wantedPersons && Array.isArray(data.wantedPersons)) {
-        setWantedPersons(data.wantedPersons);
-      }
-      
-      if (data.settings) {
-        setSettings({...defaultSettings, ...data.settings});
-      }
-      
-      return true;
+      return success;
     } catch (error) {
       console.error('Error importing data:', error);
       return false;
@@ -258,11 +318,20 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Update settings
-  const updateSettings = (newSettings: Partial<Settings>) => {
-    setSettings(prevSettings => ({
-      ...prevSettings,
+  const updateSettings = async (newSettings: Partial<Settings>) => {
+    const updatedSettings = {
+      ...settings,
       ...newSettings
-    }));
+    };
+    
+    try {
+      await localDatabase.updateSettings(updatedSettings);
+      setSettings(updatedSettings);
+      console.log('Settings updated in local database');
+    } catch (error) {
+      console.error('Failed to update settings in database:', error);
+      setSettings(updatedSettings);
+    }
   };
 
   return (
@@ -270,6 +339,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       documents, 
       wantedPersons, 
       settings,
+      isLoading,
       addDocument, 
       deleteDocument,
       addWantedPerson,

@@ -14,6 +14,7 @@ import Documents from "./pages/Documents";
 import WantedPersons from "./pages/WantedPersons";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import AIManagement from "./pages/AIManagement";
 import NotFound from "./pages/NotFound";
 
 // Create a new QueryClient instance
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/wanted" element={<WantedPersons />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/ai-management" element={<AIManagement />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </DataProvider>

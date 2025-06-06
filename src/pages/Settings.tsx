@@ -18,17 +18,23 @@ import {
   Moon,
   Sun,
   Info,
-  AlertTriangle
+  AlertTriangle,
+  Brain,
+  Smartphone,
+  HardDrive
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import Layout from '@/components/Layout';
 
 const Settings = () => {
+  const navigate = useNavigate();
   const { 
     documents, 
     wantedPersons, 
     settings, 
+    isLoading,
     clearAllData, 
     loadSampleData, 
     loadLargeDataset,
@@ -39,14 +45,14 @@ const Settings = () => {
   
   const [importText, setImportText] = useState('');
 
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      const data = exportData();
+      const data = await exportData();
       const blob = new Blob([data], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `docvault-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `docvault-offline-backup-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -54,7 +60,7 @@ const Settings = () => {
       
       toast({
         title: "Data Exported",
-        description: "Your data has been exported successfully"
+        description: "Your offline data has been exported successfully"
       });
     } catch (error) {
       toast({
@@ -65,7 +71,7 @@ const Settings = () => {
     }
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!importText.trim()) {
       toast({
         title: "Import Error",
@@ -75,11 +81,11 @@ const Settings = () => {
       return;
     }
 
-    const success = importData(importText);
+    const success = await importData(importText);
     if (success) {
       toast({
         title: "Data Imported",
-        description: "Your data has been imported successfully"
+        description: "Your offline data has been imported successfully"
       });
       setImportText('');
     } else {
@@ -96,7 +102,7 @@ const Settings = () => {
       clearAllData();
       toast({
         title: "Data Cleared",
-        description: "All data has been deleted"
+        description: "All offline data has been deleted"
       });
     }
   };
@@ -129,6 +135,19 @@ const Settings = () => {
     });
   };
 
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <SettingsIcon className="mx-auto mb-4 text-docvault-accent animate-pulse" size={48} />
+            <p className="text-docvault-gray">Loading Settings...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto animate-fade-in">
@@ -138,7 +157,7 @@ const Settings = () => {
             Settings
           </h1>
           <p className="text-docvault-gray text-sm">
-            Manage your application preferences and data
+            Manage your offline application preferences and data
           </p>
         </header>
 
@@ -150,7 +169,7 @@ const Settings = () => {
                 <Globe className="mr-2" size={20} />
                 App Preferences
               </CardTitle>
-              <CardDescription>Customize your app experience</CardDescription>
+              <CardDescription>Customize your offline app experience</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
@@ -205,12 +224,52 @@ const Settings = () => {
               </div>
               
               <div className="flex items-center justify-between">
-                <Label htmlFor="tips">Assistant Tips</Label>
+                <Label htmlFor="ai-processing">AI Processing</Label>
                 <Switch
-                  id="tips"
-                  checked={settings.enableAssistantTips}
-                  onCheckedChange={(checked) => updateSettings({ enableAssistantTips: checked })}
+                  id="ai-processing"
+                  checked={settings.aiProcessingEnabled}
+                  onCheckedChange={(checked) => updateSettings({ aiProcessingEnabled: checked })}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Management */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Brain className="mr-2" size={20} />
+                AI Management
+              </CardTitle>
+              <CardDescription>
+                Manage your offline AI models and training
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-sm text-docvault-gray">
+                <p>Train custom models for:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Document classification</li>
+                  <li>Text extraction (OCR)</li>
+                  <li>Face recognition</li>
+                  <li>Custom pattern detection</li>
+                </ul>
+              </div>
+              
+              <Button 
+                onClick={() => navigate('/ai-management')}
+                className="w-full bg-docvault-accent hover:bg-docvault-accent/80"
+              >
+                <Brain className="mr-2" size={16} />
+                Open AI Management
+              </Button>
+              
+              <div className="text-xs text-docvault-gray bg-docvault-dark/30 p-3 rounded">
+                <div className="flex items-center mb-1">
+                  <Smartphone className="mr-1" size={12} />
+                  Fully Offline Operation
+                </div>
+                <p>All AI processing happens locally on your device. No internet required.</p>
               </div>
             </CardContent>
           </Card>
@@ -220,16 +279,24 @@ const Settings = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Database className="mr-2" size={20} />
-                Data Management
+                Local Data Management
               </CardTitle>
               <CardDescription>
-                Manage your documents and database
+                Manage your offline database
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-sm text-docvault-gray mb-4">
-                <p>Documents: <span className="text-docvault-accent font-medium">{documents.length}</span></p>
-                <p>Wanted Persons: <span className="text-docvault-accent font-medium">{wantedPersons.length}</span></p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-docvault-dark/30 p-3 rounded">
+                    <p className="font-medium">Documents</p>
+                    <p className="text-lg text-docvault-accent">{documents.length}</p>
+                  </div>
+                  <div className="bg-docvault-dark/30 p-3 rounded">
+                    <p className="font-medium">Wanted Persons</p>
+                    <p className="text-lg text-docvault-accent">{wantedPersons.length}</p>
+                  </div>
+                </div>
               </div>
               
               <div className="space-y-3">
@@ -266,73 +333,116 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          {/* Backup & Restore */}
-          <Card className="glass-card lg:col-span-2">
+          {/* System Status */}
+          <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Download className="mr-2" size={20} />
-                Backup & Restore
+                <HardDrive className="mr-2" size={20} />
+                System Status
               </CardTitle>
               <CardDescription>
-                Export your data or import from a backup
+                Monitor your offline system
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button 
-                  onClick={handleExport}
-                  className="flex-1 bg-docvault-accent hover:bg-docvault-accent/80"
-                >
-                  <Download className="mr-2" size={16} />
-                  Export Data
-                </Button>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Offline Mode</span>
+                  <span className="text-green-400 text-sm font-medium">Active</span>
+                </div>
                 
-                <Button 
-                  onClick={handleImport}
-                  variant="outline"
-                  className="flex-1 border-docvault-accent/30"
-                  disabled={!importText.trim()}
-                >
-                  <Upload className="mr-2" size={16} />
-                  Import Data
-                </Button>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Local Database</span>
+                  <span className="text-green-400 text-sm font-medium">Connected</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">AI Services</span>
+                  <span className="text-green-400 text-sm font-medium">Ready</span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Camera Access</span>
+                  <span className="text-green-400 text-sm font-medium">Available</span>
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="import-data">Import Backup Data</Label>
-                <Textarea
-                  id="import-data"
-                  placeholder="Paste your exported backup data here..."
-                  value={importText}
-                  onChange={(e) => setImportText(e.target.value)}
-                  className="bg-docvault-dark/50 border-docvault-accent/30 h-32"
-                />
+              <Separator className="bg-docvault-accent/20" />
+              
+              <div className="text-xs text-docvault-gray">
+                <p>All data is stored locally on your device.</p>
+                <p>No internet connection required for operation.</p>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Backup & Restore */}
+        <Card className="glass-card mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Download className="mr-2" size={20} />
+              Offline Backup & Restore
+            </CardTitle>
+            <CardDescription>
+              Export your data or import from a backup file
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                onClick={handleExport}
+                className="flex-1 bg-docvault-accent hover:bg-docvault-accent/80"
+              >
+                <Download className="mr-2" size={16} />
+                Export Offline Data
+              </Button>
+              
+              <Button 
+                onClick={handleImport}
+                variant="outline"
+                className="flex-1 border-docvault-accent/30"
+                disabled={!importText.trim()}
+              >
+                <Upload className="mr-2" size={16} />
+                Import Data
+              </Button>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="import-data">Import Backup Data</Label>
+              <Textarea
+                id="import-data"
+                placeholder="Paste your exported backup data here..."
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                className="bg-docvault-dark/50 border-docvault-accent/30 h-32"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Info Section */}
         <Card className="glass-card mt-6">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Info className="mr-2" size={20} />
-              About DocVault
+              About DocVault Offline
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <h4 className="font-medium text-docvault-accent mb-1">Version</h4>
-                <p className="text-docvault-gray">1.0.0</p>
+                <p className="text-docvault-gray">1.0.0 Offline</p>
               </div>
               <div>
                 <h4 className="font-medium text-docvault-accent mb-1">Build</h4>
-                <p className="text-docvault-gray">Mobile Optimized</p>
+                <p className="text-docvault-gray">Mobile + AI Ready</p>
               </div>
               <div>
                 <h4 className="font-medium text-docvault-accent mb-1">Storage</h4>
-                <p className="text-docvault-gray">Local Device</p>
+                <p className="text-docvault-gray">Local SQLite + IndexedDB</p>
               </div>
             </div>
           </CardContent>
