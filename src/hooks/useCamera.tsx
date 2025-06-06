@@ -6,7 +6,7 @@ import { useCameraStream } from './camera/useCameraStream';
 import { useCameraCapture } from './camera/useCameraCapture';
 import { useCameraFlash } from './camera/useCameraFlash';
 
-export { UseCameraReturn } from './camera/types';
+export type { UseCameraReturn } from './camera/types';
 
 export const useCamera = (): UseCameraReturn => {
   const videoRef = useRef<HTMLVideoElement>(null);
