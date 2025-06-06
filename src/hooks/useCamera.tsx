@@ -1,4 +1,3 @@
-
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { ExtendedMediaTrackCapabilities, MediaTrackConstraintsWithTorch } from '@/types/camera';
 
@@ -97,16 +96,6 @@ export const useCamera = (): UseCameraReturn => {
         };
         
         videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
-        
-        // Cleanup function for the event listener
-        const cleanup = () => {
-          if (videoRef.current) {
-            videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
-          }
-        };
-        
-        // Store cleanup function for later use
-        return cleanup;
       }
     } catch (error) {
       console.error('Camera access error:', error);
