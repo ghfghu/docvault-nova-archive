@@ -241,13 +241,29 @@ class OfflineAIService {
             throw new Error('No weight data found');
           }
           
-          const combinedData = new Uint8Array(modelJson.length + weightsData.byteLength + 4);
+          // Handle WeightData which can be ArrayBuffer or ArrayBuffer[]
+          let combinedWeightsBuffer: ArrayBuffer;
+          if (Array.isArray(weightsData)) {
+            // Concatenate multiple ArrayBuffers
+            const totalLength = weightsData.reduce((sum, buffer) => sum + buffer.byteLength, 0);
+            combinedWeightsBuffer = new ArrayBuffer(totalLength);
+            const uint8View = new Uint8Array(combinedWeightsBuffer);
+            let offset = 0;
+            for (const buffer of weightsData) {
+              uint8View.set(new Uint8Array(buffer), offset);
+              offset += buffer.byteLength;
+            }
+          } else {
+            combinedWeightsBuffer = weightsData;
+          }
+          
+          const combinedData = new Uint8Array(modelJson.length + combinedWeightsBuffer.byteLength + 4);
           const jsonLengthView = new DataView(combinedData.buffer, 0, 4);
           jsonLengthView.setUint32(0, modelJson.length);
           
           const encoder = new TextEncoder();
           combinedData.set(encoder.encode(modelJson), 4);
-          combinedData.set(new Uint8Array(weightsData), 4 + modelJson.length);
+          combinedData.set(new Uint8Array(combinedWeightsBuffer), 4 + modelJson.length);
 
           const { localDatabase } = await import('./LocalDatabase');
           await localDatabase.saveAIModel({
@@ -263,7 +279,7 @@ class OfflineAIService {
           return {
             modelArtifactsInfo: {
               dateSaved: new Date(),
-              modelTopologyType: 'JSON'
+              modelTopologyType: 'JSON' as const
             }
           };
         }
