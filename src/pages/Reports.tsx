@@ -47,9 +47,9 @@ const Reports = () => {
   const tooltipFormatter = (value: number) => [`${value} documents`, 'Count'];
   
   // Export data as JSON
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      const jsonData = exportData();
+      const jsonData = await exportData(); // Await the promise
       
       // Create blob and download link
       const blob = new Blob([jsonData], { type: 'application/json' });
@@ -79,15 +79,15 @@ const Reports = () => {
   };
   
   // Import data from JSON file
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const jsonData = event.target?.result as string;
-        const success = importData(jsonData);
+        const success = await importData(jsonData); // Await the promise
         
         if (success) {
           toast({

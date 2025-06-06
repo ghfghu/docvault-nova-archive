@@ -15,7 +15,7 @@ interface DocVaultDB extends DBSchema {
   };
   settings: {
     key: string;
-    value: Settings;
+    value: Settings & { id: string }; // Add id to Settings type for storage
   };
   aiModels: {
     key: string;
@@ -125,7 +125,7 @@ class LocalDatabaseService {
       const storedSettings = localStorage.getItem('docvault_settings');
       if (storedSettings && this.db) {
         const settings = JSON.parse(storedSettings);
-        await this.db.put('settings', { id: 'main', ...settings });
+        await this.db.put('settings', { ...settings, id: 'main' }); // Add id for settings
         console.log('Migrated settings from localStorage');
         localStorage.removeItem('docvault_settings');
       }
@@ -175,12 +175,16 @@ class LocalDatabaseService {
   async getSettings(): Promise<Settings | null> {
     if (!this.db) throw new Error('Database not initialized');
     const result = await this.db.get('settings', 'main');
-    return result || null;
+    if (!result) return null;
+    
+    // Remove the id field when returning Settings
+    const { id, ...settings } = result;
+    return settings as Settings;
   }
 
   async updateSettings(settings: Settings): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
-    await this.db.put('settings', { id: 'main', ...settings });
+    await this.db.put('settings', { ...settings, id: 'main' }); // Add id for storage
   }
 
   // AI Model operations
@@ -277,7 +281,7 @@ class LocalDatabaseService {
       }
 
       if (data.settings) {
-        await tx.objectStore('settings').put({ id: 'main', ...data.settings });
+        await tx.objectStore('settings').put({ ...data.settings, id: 'main' }); // Add id for storage
       }
 
       if (data.aiModels?.length) {

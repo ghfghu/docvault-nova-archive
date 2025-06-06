@@ -230,31 +230,46 @@ class OfflineAIService {
     if (!aiModel.model) return;
 
     try {
-      // Convert model to ArrayBuffer for storage
-      const modelArtifacts = await aiModel.model.save(tf.io.withSaveHandler(async (artifacts) => artifacts));
-      
-      // Serialize the model
-      const modelJson = JSON.stringify(modelArtifacts.modelTopology);
-      const weightsData = modelArtifacts.weightData;
-      
-      const combinedData = new Uint8Array(modelJson.length + weightsData.byteLength + 4);
-      const jsonLengthView = new DataView(combinedData.buffer, 0, 4);
-      jsonLengthView.setUint32(0, modelJson.length);
-      
-      const encoder = new TextEncoder();
-      combinedData.set(encoder.encode(modelJson), 4);
-      combinedData.set(new Uint8Array(weightsData), 4 + modelJson.length);
+      // Save model using a custom handler to get the data properly
+      const saveHandler = {
+        save: async (modelArtifacts: tf.io.ModelArtifacts) => {
+          // Create a combined data structure for storage
+          const modelJson = JSON.stringify(modelArtifacts.modelTopology);
+          const weightsData = modelArtifacts.weightData;
+          
+          if (!weightsData) {
+            throw new Error('No weight data found');
+          }
+          
+          const combinedData = new Uint8Array(modelJson.length + weightsData.byteLength + 4);
+          const jsonLengthView = new DataView(combinedData.buffer, 0, 4);
+          jsonLengthView.setUint32(0, modelJson.length);
+          
+          const encoder = new TextEncoder();
+          combinedData.set(encoder.encode(modelJson), 4);
+          combinedData.set(new Uint8Array(weightsData), 4 + modelJson.length);
 
-      const { localDatabase } = await import('./LocalDatabase');
-      await localDatabase.saveAIModel({
-        id: aiModel.id,
-        name: aiModel.name,
-        type: aiModel.type,
-        modelData: combinedData.buffer,
-        metadata: aiModel.metadata
-      });
+          const { localDatabase } = await import('./LocalDatabase');
+          await localDatabase.saveAIModel({
+            id: aiModel.id,
+            name: aiModel.name,
+            type: aiModel.type,
+            modelData: combinedData.buffer,
+            metadata: aiModel.metadata
+          });
 
-      console.log(`Model ${aiModel.name} saved to database`);
+          console.log(`Model ${aiModel.name} saved to database`);
+          
+          return {
+            modelArtifactsInfo: {
+              dateSaved: new Date(),
+              modelTopologyType: 'JSON'
+            }
+          };
+        }
+      };
+
+      await aiModel.model.save(tf.io.withSaveHandler(saveHandler.save));
     } catch (error) {
       console.error('Failed to save model:', error);
     }
