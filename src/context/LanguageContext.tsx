@@ -1,29 +1,61 @@
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { translations } from '@/translations';
 import type { LanguageContextType } from '@/types/language';
 import type { LanguageCode } from '@/translations';
 
-// Create the context with a default value
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Provider component
-export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
-  const [language, setLanguage] = useState<LanguageCode>('en');
+const detectDeviceLanguage = (): LanguageCode => {
+  const deviceLang = navigator.language.split('-')[0].toLowerCase();
+  console.log('Device language detected:', deviceLang);
+  
+  // Only support Arabic and English
+  if (deviceLang === 'ar') {
+    return 'ar';
+  }
+  
+  // Default to English for all other languages
+  return 'en';
+};
 
-  // Function to translate text
+export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
+  const [language, setLanguage] = useState<LanguageCode>(() => {
+    const saved = localStorage.getItem('language') as LanguageCode;
+    if (saved && (saved === 'en' || saved === 'ar')) {
+      return saved;
+    }
+    return detectDeviceLanguage();
+  });
+
+  // Set document direction and language attributes
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    localStorage.setItem('language', language);
+  }, [language]);
+
   const t = useCallback((key: string) => {
     return translations[language][key as keyof typeof translations[typeof language]] || key;
   }, [language]);
 
+  const changeLanguage = useCallback((newLanguage: LanguageCode) => {
+    if (newLanguage === 'en' || newLanguage === 'ar') {
+      setLanguage(newLanguage);
+    }
+  }, []);
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ 
+      language, 
+      setLanguage: changeLanguage, 
+      t 
+    }}>
       {children}
     </LanguageContext.Provider>
   );
 };
 
-// Custom hook to use the language context
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (context === undefined) {

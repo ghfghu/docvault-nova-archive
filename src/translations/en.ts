@@ -23,6 +23,7 @@ export const enTranslations = {
   imageCaptured: 'Image Captured',
   ofImages: 'of Images',
   startCamera: 'Start Camera',
+  capture: 'Capture',
   enableFlash: 'Enable Flash',
   disableFlash: 'Disable Flash',
   flashNotSupported: 'Flash Not Supported',

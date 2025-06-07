@@ -23,6 +23,7 @@ export const arTranslations = {
   imageCaptured: 'تم التقاط الصورة',
   ofImages: 'من الصور',
   startCamera: 'تشغيل الكاميرا',
+  capture: 'التقاط',
   enableFlash: 'تمكين الفلاش',
   disableFlash: 'تعطيل الفلاش',
   flashNotSupported: 'الفلاش غير مدعوم',

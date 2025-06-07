@@ -14,7 +14,10 @@ export const useCameraStream = ({ state, setState, videoRef, getCameraConstraint
   const streamRef = useRef<MediaStream | null>(null);
 
   const startCamera = useCallback(async (): Promise<void> => {
-    if (state.cameraInitializing || state.cameraActive) return;
+    if (state.cameraInitializing || state.cameraActive) {
+      console.log('Camera already starting or active');
+      return;
+    }
     
     console.log('Starting camera...');
     setState({ cameraInitializing: true, videoLoaded: false });
@@ -22,7 +25,6 @@ export const useCameraStream = ({ state, setState, videoRef, getCameraConstraint
     try {
       // Check for camera permissions on mobile
       if (window.Capacitor?.isNativePlatform()) {
-        // Add a small delay to ensure UI is ready
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
@@ -37,13 +39,13 @@ export const useCameraStream = ({ state, setState, videoRef, getCameraConstraint
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         
-        // Handle video loaded event
+        // Set camera active immediately when stream is available
+        setState({ cameraActive: true });
+        
+        // Handle video loaded event with better error handling
         const handleLoadedMetadata = () => {
-          console.log('Video metadata loaded');
-          setState({ 
-            videoLoaded: true, 
-            cameraActive: true 
-          });
+          console.log('Video metadata loaded, video ready');
+          setState({ videoLoaded: true });
           
           // Check for flash support
           const videoTrack = stream.getVideoTracks()[0];
@@ -55,8 +57,31 @@ export const useCameraStream = ({ state, setState, videoRef, getCameraConstraint
             }
           }
         };
+
+        const handleCanPlay = () => {
+          console.log('Video can play');
+          setState({ videoLoaded: true });
+        };
+
+        const handleError = (error: Event) => {
+          console.error('Video loading error:', error);
+          setState({ 
+            cameraActive: false, 
+            videoLoaded: false 
+          });
+        };
         
-        videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+        videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+        videoRef.current.addEventListener('canplay', handleCanPlay, { once: true });
+        videoRef.current.addEventListener('error', handleError, { once: true });
+        
+        // Ensure video plays
+        try {
+          await videoRef.current.play();
+          console.log('Video started playing');
+        } catch (playError) {
+          console.warn('Video autoplay failed:', playError);
+        }
       }
     } catch (error) {
       console.error('Camera access error:', error);
@@ -65,7 +90,6 @@ export const useCameraStream = ({ state, setState, videoRef, getCameraConstraint
         videoLoaded: false 
       });
       
-      // More specific error handling for mobile
       if (error instanceof DOMException) {
         switch (error.name) {
           case 'NotAllowedError':

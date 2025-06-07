@@ -13,9 +13,6 @@ import { useLanguage } from '@/context/LanguageContext';
 const LanguageSelector = () => {
   const { language, setLanguage, t } = useLanguage();
 
-  // Ensure language is a valid value before rendering
-  const currentLanguage = language || 'en';
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -23,18 +20,18 @@ const LanguageSelector = () => {
           <Globe size={20} />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="bg-docvault-dark border-docvault-accent/30">
         <DropdownMenuItem 
           onClick={() => setLanguage('en')}
-          className={currentLanguage === 'en' ? 'bg-docvault-accent/20' : ''}
+          className={`cursor-pointer ${language === 'en' ? 'bg-docvault-accent/20 text-docvault-accent' : 'text-docvault-light hover:bg-docvault-accent/10'}`}
         >
-          {t ? t('english') : 'English'}
+          {t('english')}
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => setLanguage('ar')}
-          className={currentLanguage === 'ar' ? 'bg-docvault-accent/20' : ''}
+          className={`cursor-pointer ${language === 'ar' ? 'bg-docvault-accent/20 text-docvault-accent' : 'text-docvault-light hover:bg-docvault-accent/10'}`}
         >
-          {t ? t('arabic') : 'Arabic'}
+          {t('arabic')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
