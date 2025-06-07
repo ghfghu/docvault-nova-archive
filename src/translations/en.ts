@@ -1,4 +1,3 @@
-
 export const enTranslations = {
   scanDocument: 'Scan Document',
   captureDocument: 'Capture a document by taking a picture with your camera.',
@@ -100,4 +99,51 @@ export const enTranslations = {
   cameraLoading: 'Camera is loading...',
   cameraNotReady: 'Camera is not ready yet. Please wait.',
   captureError: 'Error capturing image',
+  
+  // Counter page
+  counter: 'Counter',
+  currentCount: 'Current Count',
+  total: 'Total',
+  absolute: 'Absolute',
+  
+  // AI Training page
+  aiTraining: 'AI Training',
+  trainCustomModels: 'Train custom AI models for offline operation',
+  modelSelection: 'Model Selection',
+  selectModel: 'Select a model to train',
+  startTraining: 'Start Training',
+  pause: 'Pause',
+  stop: 'Stop',
+  trainingProgress: 'Training Progress',
+  progress: 'Progress',
+  status: 'Status',
+  idle: 'Idle',
+  training: 'Training',
+  paused: 'Paused',
+  completed: 'Completed',
+  downloadModel: 'Download Model',
+  trainingData: 'Training Data',
+  images: 'Images',
+  uploadTrainingData: 'Upload Training Data',
+  modelResults: 'Model Results',
+  accuracy: 'Accuracy',
+  precision: 'Precision',
+  recall: 'Recall',
+  trainingCompleted: 'Training completed successfully!',
+  
+  // Extensions page
+  extensions: 'Extensions',
+  extendFunctionality: 'Extend functionality with custom add-ons',
+  searchExtensions: 'Search extensions...',
+  configure: 'Configure',
+  uninstall: 'Uninstall',
+  install: 'Install',
+  noExtensionsFound: 'No Extensions Found',
+  tryDifferentSearch: 'Try a different search term',
+  clearSearch: 'Clear Search',
+  
+  // Validation
+  atLeastOneImageRequired: 'At least one image is required',
+  documentNameRequired: 'Document name is required',
+  documentTypeRequired: 'Document type is required',
 };

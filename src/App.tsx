@@ -16,6 +16,9 @@ import WantedPersons from "./pages/WantedPersons";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import AIManagement from "./pages/AIManagement";
+import Counter from "./pages/Counter";
+import AITraining from "./pages/AITraining";
+import Extensions from "./pages/Extensions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +42,9 @@ const App = () => (
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/ai-management" element={<AIManagement />} />
+                  <Route path="/counter" element={<Counter />} />
+                  <Route path="/ai-training" element={<AITraining />} />
+                  <Route path="/extensions" element={<Extensions />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </DataProvider>
