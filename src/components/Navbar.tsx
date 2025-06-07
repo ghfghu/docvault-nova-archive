@@ -14,7 +14,10 @@ import {
   BarChart3, 
   Settings,
   User,
-  LogOut
+  LogOut,
+  Brain,
+  Calculator,
+  Puzzle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,11 +35,14 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const navItems = [
-    { name: t('home'), path: '/dashboard', icon: LayoutDashboard },
-    { name: t('scan'), path: '/scan', icon: Camera },
+    { name: t('dashboard'), path: '/dashboard', icon: LayoutDashboard },
+    { name: t('scanDocument'), path: '/scan', icon: Camera },
     { name: t('documents'), path: '/documents', icon: Files },
-    { name: t('wanted'), path: '/wanted', icon: Users },
+    { name: t('wantedPersons'), path: '/wanted', icon: Users },
     { name: t('reports'), path: '/reports', icon: BarChart3 },
+    { name: t('counter'), path: '/counter', icon: Calculator },
+    { name: t('aiTraining'), path: '/ai-training', icon: Brain },
+    { name: t('extensions'), path: '/extensions', icon: Puzzle },
     { name: t('settings'), path: '/settings', icon: Settings },
   ];
   
@@ -57,9 +63,9 @@ const Navbar = () => {
             </span>
           </Link>
           
-          {/* Desktop Menu */}
+          {/* Desktop Menu - Show first 6 items */}
           <div className="hidden md:flex space-x-1">
-            {navItems.map((item) => (
+            {navItems.slice(0, 6).map((item) => (
               <Link key={item.path} to={item.path}>
                 <Button
                   variant="ghost"
@@ -70,7 +76,7 @@ const Navbar = () => {
                   }`}
                 >
                   <item.icon size={18} />
-                  <span>{item.name}</span>
+                  <span className="hidden lg:inline">{item.name}</span>
                 </Button>
               </Link>
             ))}

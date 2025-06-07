@@ -146,4 +146,36 @@ export const enTranslations = {
   atLeastOneImageRequired: 'At least one image is required',
   documentNameRequired: 'Document name is required',
   documentTypeRequired: 'Document type is required',
+  
+  // AI Chat
+  aiAssistant: 'AI Assistant',
+  askAnything: 'Ask me anything about document management...',
+  quickQuestions: 'Quick questions:',
+  
+  // Navigation
+  home: 'Home',
+  scan: 'Scan',
+  wanted: 'Wanted',
+  appName: 'DocVault',
+  
+  // Status messages
+  starting: 'Starting...',
+  capturing: 'Capturing...',
+  tryAgain: 'Try Again',
+  resume: 'Resume',
+  
+  // New features
+  analytics: 'Analytics',
+  activity: 'Activity',
+  totalChanges: 'Total Changes',
+  range: 'Range',
+  recentHistory: 'Recent History',
+  smartCounting: 'Smart counting with analytics',
+  
+  // AI Training additions
+  modelPerformance: 'Model Performance',
+  eta: 'ETA',
+  selectFiles: 'Select Files',
+  hide: 'Hide',
+  show: 'Show',
 };

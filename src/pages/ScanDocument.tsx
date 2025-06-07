@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import Layout from '@/components/Layout';
-import CameraCapture from '@/components/document/CameraCapture';
+import SimpleCamera from '@/components/camera/SimpleCamera';
 import DocumentForm from '@/components/document/DocumentForm';
 import { useDocumentForm } from '@/hooks/useDocumentForm';
 
@@ -14,7 +14,6 @@ const ScanDocument = () => {
   const { t, language } = useLanguage();
   const { formData, images, setImages, updateField, submitDocument } = useDocumentForm();
   
-  // Ensure we have a valid language value for direction
   const dir = language === 'ar' ? 'rtl' : 'ltr';
   
   return (
@@ -36,7 +35,7 @@ const ScanDocument = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <CameraCapture images={images || []} setImages={setImages} />
+              <SimpleCamera images={images || []} setImages={setImages} />
             </CardContent>
           </Card>
           
