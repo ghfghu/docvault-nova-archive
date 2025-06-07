@@ -72,7 +72,7 @@ const Layout = ({ children }: LayoutProps) => {
                 if (e.key === 'Enter') handlePasswordSubmit();
               }}
             />
-            {isPasswordIncorrected && (
+            {isPasswordIncorrect && (
               <p className="text-red-500 text-sm mt-2">Incorrect password. Please try again.</p>
             )}
           </div>
