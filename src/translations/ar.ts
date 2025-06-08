@@ -1,4 +1,3 @@
-
 export const arTranslations = {
   scanDocument: 'مسح المستند',
   captureDocument: 'التقط صورة لمستند باستخدام كاميرا جهازك.',
@@ -24,6 +23,10 @@ export const arTranslations = {
   ofImages: 'من الصور',
   startCamera: 'تشغيل الكاميرا',
   capture: 'التقاط',
+  capturing: 'التقاط...',
+  tryAgain: 'حاول مرة أخرى',
+  cameraNotReady: 'الكاميرا غير جاهزة',
+  captureError: 'خطأ في الالتقاط',
   enableFlash: 'تمكين الفلاش',
   disableFlash: 'تعطيل الفلاش',
   flashNotSupported: 'الفلاش غير مدعوم',
@@ -98,8 +101,6 @@ export const arTranslations = {
   enableAssistantTips: 'تمكين تلميحات المساعد',
   showOnboarding: 'عرض التعليمات',
   cameraLoading: 'جاري تحميل الكاميرا...',
-  cameraNotReady: 'الكاميرا ليست جاهزة بعد. يرجى الانتظار.',
-  captureError: 'خطأ في التقاط الصورة',
   counter: 'العداد',
   currentCount: 'العدد الحالي',
   total: 'المجموع',
@@ -147,8 +148,6 @@ export const arTranslations = {
   wanted: 'مطلوب',
   appName: 'DocVault',
   starting: 'جاري البدء...',
-  capturing: 'جاري التقاط...',
-  tryAgain: 'حاول مرة أخرى',
   resume: 'استئناف',
   analytics: 'التحليلات',
   activity: 'النشاط',

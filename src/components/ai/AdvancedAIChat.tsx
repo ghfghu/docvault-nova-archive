@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Bot, User, Send, Loader2, Brain, Zap, Globe } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { realAIService } from '@/services/RealAIService';
+import { simpleAIService } from '@/services/SimpleAIService';
 
 interface Message {
   id: string;
@@ -23,7 +23,7 @@ interface AdvancedAIChatProps {
   enableDeepSec?: boolean;
 }
 
-const AdvancedAIChat = ({ enableDeepSec = true }: AdvancedAIChatProps) => {
+const AdvancedAIChat = ({ enableDeepSec = false }: AdvancedAIChatProps) => {
   const { t, language } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -33,8 +33,8 @@ const AdvancedAIChat = ({ enableDeepSec = true }: AdvancedAIChatProps) => {
   // Initialize with greeting
   useEffect(() => {
     const greeting = language === 'ar' 
-      ? 'مرحباً! أنا مساعد الذكاء الاصطناعي المدعوم بتقنية DeepSec. يمكنني مساعدتك في تحليل المستندات والإجابة على أسئلتك باللغة العربية أو الإنجليزية.'
-      : 'Hello! I\'m your AI assistant powered by DeepSec technology. I can help you with document analysis and answer questions in both Arabic and English.';
+      ? 'مرحباً! أنا مساعد الذكاء الاصطناعي. يمكنني مساعدتك في تحليل المستندات والإجابة على أسئلتك باللغة العربية أو الإنجليزية.'
+      : 'Hello! I\'m your AI assistant. I can help you with document analysis and answer questions in both Arabic and English.';
     
     setMessages([{
       id: '1',
@@ -43,9 +43,9 @@ const AdvancedAIChat = ({ enableDeepSec = true }: AdvancedAIChatProps) => {
       timestamp: new Date(),
       language: language,
       confidence: 0.98,
-      aiModel: enableDeepSec ? 'DeepSec-Advanced' : 'Standard-AI'
+      aiModel: 'SimpleAI-v1'
     }]);
-  }, [language, enableDeepSec]);
+  }, [language]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -64,8 +64,8 @@ const AdvancedAIChat = ({ enableDeepSec = true }: AdvancedAIChatProps) => {
     setIsLoading(true);
 
     try {
-      // Use real AI service
-      const aiResponse = await realAIService.processText(currentInput, language);
+      // Use simple AI service
+      const aiResponse = await simpleAIService.processText(currentInput, language);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -100,8 +100,8 @@ const AdvancedAIChat = ({ enableDeepSec = true }: AdvancedAIChatProps) => {
   };
 
   const quickQuestions = language === 'ar' 
-    ? ["كيف أمسح مستند؟", "ما هي أنواع المستندات المدعومة؟", "كيف أدرب نموذج AI؟"]
-    : ["How do I scan a document?", "What document types are supported?", "How to train an AI model?"];
+    ? ["كيف أمسح مستند؟", "ما هي أنواع المستندات المدعومة؟", "الكاميرا لا تعمل"]
+    : ["How do I scan a document?", "What document types are supported?", "Camera not working"];
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -115,7 +115,7 @@ const AdvancedAIChat = ({ enableDeepSec = true }: AdvancedAIChatProps) => {
         <CardTitle className="flex items-center justify-between text-lg">
           <div className="flex items-center">
             <Bot className="mr-2 text-docvault-accent" size={20} />
-            {language === 'ar' ? 'مساعد AI متقدم' : 'Advanced AI Assistant'}
+            {language === 'ar' ? 'مساعد AI' : 'AI Assistant'}
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="border-docvault-accent/30 text-xs">
@@ -125,7 +125,7 @@ const AdvancedAIChat = ({ enableDeepSec = true }: AdvancedAIChatProps) => {
             {enableDeepSec && (
               <Badge className="bg-docvault-accent text-xs">
                 <Brain className="mr-1" size={10} />
-                DeepSec
+                AI
               </Badge>
             )}
           </div>

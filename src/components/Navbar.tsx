@@ -1,155 +1,106 @@
-
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
-import { Button } from '@/components/ui/button';
-import LanguageSelector from '@/components/LanguageSelector';
-import { 
-  Menu, 
-  LayoutDashboard, 
-  Camera, 
-  Files, 
-  Users, 
-  BarChart3, 
-  Settings,
-  User,
-  LogOut,
-  Brain,
-  Calculator,
-  Puzzle
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { LogOut } from "lucide-react";
+import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
+import LanguageSelector from './LanguageSelector';
+import ThemeSelector from './ThemeSelector';
 
-const Navbar = () => {
-  const { user, logout } = useAuth();
-  const { t, language } = useLanguage();
-  const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  const navItems = [
-    { name: t('dashboard'), path: '/dashboard', icon: LayoutDashboard },
-    { name: t('scanDocument'), path: '/scan', icon: Camera },
-    { name: t('documents'), path: '/documents', icon: Files },
-    { name: t('wantedPersons'), path: '/wanted', icon: Users },
-    { name: t('reports'), path: '/reports', icon: BarChart3 },
-    { name: t('counter'), path: '/counter', icon: Calculator },
-    { name: t('aiTraining'), path: '/ai-training', icon: Brain },
-    { name: t('extensions'), path: '/extensions', icon: Puzzle },
-    { name: t('settings'), path: '/enhanced-settings', icon: Settings },
-  ];
-  
-  const isActive = (path: string) => location.pathname === path;
-  
+const NavbarContent = () => {
+  const { t } = useLanguage();
+  const { logout } = useAuth();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    setShowLogoutDialog(false);
+  };
+
   return (
-    <nav className="bg-docvault-dark/80 sticky top-0 z-50 backdrop-blur-lg border-b border-docvault-accent/10" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-center">
-          {/* Logo */}
-          <Link to="/dashboard" className="flex items-center space-x-2">
-            <span className="text-lg font-bold glow-effect">
-              {language === 'en' ? (
-                <>Doc<span className="text-docvault-accent">Vault</span></>
-              ) : (
-                <>{t('appName')}</>
-              )}
-            </span>
+    <>
+      <div className="flex items-center justify-between h-16 px-6 bg-docvault-dark/95 backdrop-blur-sm border-b border-docvault-accent/20">
+        <div className="flex items-center space-x-4">
+          <Link to="/dashboard" className="text-xl font-bold text-docvault-accent">
+            {t('appName')}
           </Link>
-          
-          {/* Desktop Menu - Show first 6 items */}
-          <div className="hidden md:flex space-x-1">
-            {navItems.slice(0, 6).map((item) => (
-              <Link key={item.path} to={item.path}>
-                <Button
-                  variant="ghost"
-                  className={`flex items-center space-x-1 ${
-                    isActive(item.path) 
-                      ? 'bg-docvault-accent/20 text-docvault-accent animate-pulse-glow'
-                      : 'hover:bg-docvault-accent/10 hover:text-docvault-accent'
-                  }`}
-                >
-                  <item.icon size={18} />
-                  <span className="hidden lg:inline">{item.name}</span>
-                </Button>
-              </Link>
-            ))}
-            <LanguageSelector />
-          </div>
-          
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="rounded-full p-2">
-                <User size={20} className="text-docvault-accent" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="glass-card w-56" align="end">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <span className="text-sm font-normal opacity-75">{t('signIn')}</span>
-                  <span className="font-medium text-docvault-accent">{user?.username}</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-docvault-accent/20" />
-              <DropdownMenuItem asChild>
-                <Link to="/enhanced-settings" className="cursor-pointer">
-                  <Settings size={16} className="mr-2" />
-                  <span>{t('settings')}</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-400">
-                <LogOut size={16} className="mr-2" />
-                <span>{t('signIn')}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          {/* Mobile Menu Button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        </div>
+
+        <nav className="hidden md:flex items-center space-x-6">
+          <Link 
+            to="/dashboard" 
+            className="text-docvault-gray hover:text-docvault-accent transition-colors"
           >
-            <Menu />
+            {t('dashboard')}
+          </Link>
+          <Link 
+            to="/scan" 
+            className="text-docvault-gray hover:text-docvault-accent transition-colors"
+          >
+            {t('scan')}
+          </Link>
+          <Link 
+            to="/documents" 
+            className="text-docvault-gray hover:text-docvault-accent transition-colors"
+          >
+            {t('documents')}
+          </Link>
+          <Link 
+            to="/wanted" 
+            className="text-docvault-gray hover:text-docvault-accent transition-colors"
+          >
+            {t('wanted')}
+          </Link>
+          <Link 
+            to="/reports" 
+            className="text-docvault-gray hover:text-docvault-accent transition-colors"
+          >
+            {t('reports')}
+          </Link>
+          <Link 
+            to="/enhanced-settings" 
+            className="text-docvault-gray hover:text-docvault-accent transition-colors"
+          >
+            {t('settings')}
+          </Link>
+        </nav>
+
+        <div className="flex items-center space-x-4">
+          <LanguageSelector />
+          <ThemeSelector />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLogoutDialog(true)}
+            className="text-docvault-gray hover:text-docvault-accent"
+          >
+            <LogOut size={18} />
           </Button>
         </div>
-        
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="mt-3 pb-2 pt-2 border-t border-docvault-accent/10 md:hidden animate-fade-in">
-            <div className="grid grid-cols-3 gap-2">
-              {navItems.map((item) => (
-                <Link key={item.path} to={item.path} onClick={() => setMobileMenuOpen(false)}>
-                  <div 
-                    className={`flex flex-col items-center p-2 rounded ${
-                      isActive(item.path) 
-                        ? 'bg-docvault-accent/20 text-docvault-accent glow-border'
-                        : 'hover:bg-docvault-accent/10'
-                    }`}
-                  >
-                    <item.icon size={20} />
-                    <span className="text-xs mt-1">{item.name}</span>
-                  </div>
-                </Link>
-              ))}
-              <div className="flex flex-col items-center p-2 rounded hover:bg-docvault-accent/10">
-                <LanguageSelector />
-                <span className="text-xs mt-1">{t('language')}</span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </nav>
+
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('confirmLogout')}</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('no')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>
+              {t('yes')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
-
-export default Navbar;
