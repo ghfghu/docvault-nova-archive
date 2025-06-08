@@ -15,6 +15,7 @@ import Documents from "./pages/Documents";
 import WantedPersons from "./pages/WantedPersons";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import EnhancedSettings from "./pages/EnhancedSettings";
 import AIManagement from "./pages/AIManagement";
 import Counter from "./pages/Counter";
 import AITraining from "./pages/AITraining";
@@ -24,11 +25,11 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ThemeProvider>
-          <LanguageProvider>
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <BrowserRouter>
             <AuthProvider>
               <DataProvider>
                 <Toaster />
@@ -41,6 +42,7 @@ const App = () => (
                   <Route path="/wanted" element={<WantedPersons />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/enhanced-settings" element={<EnhancedSettings />} />
                   <Route path="/ai-management" element={<AIManagement />} />
                   <Route path="/counter" element={<Counter />} />
                   <Route path="/ai-training" element={<AITraining />} />
@@ -49,11 +51,11 @@ const App = () => (
                 </Routes>
               </DataProvider>
             </AuthProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
+          </BrowserRouter>
+        </LanguageProvider>
+      </ThemeProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
 );
 
 export default App;
