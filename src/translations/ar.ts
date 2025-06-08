@@ -1,4 +1,4 @@
-export const arTranslations = {
+export const ar = {
   scanDocument: 'مسح المستند',
   captureDocument: 'التقط صورة لمستند باستخدام كاميرا جهازك.',
   cameraCapture: 'التقاط بالكاميرا',
@@ -160,7 +160,7 @@ export const arTranslations = {
   selectFiles: 'اختيار الملفات',
   hide: 'إخفاء',
   show: 'إظهار',
-
+  
   // New DeepSec and enhanced features
   deepSecEnabled: 'تمكين DeepSec',
   aiModels: 'نماذج الذكاء الاصطناعي',
@@ -186,4 +186,44 @@ export const arTranslations = {
   advancedAIAssistant: 'مساعد الذكاء الاصطناعي المتقدم',
   multilingualAI: 'مساعد ذكي متعدد اللغات',
   confidence: 'الثقة',
+  
+  // Additional translations for new features
+  tryAgain: 'حاول مرة أخرى',
+  loadingCamera: 'تحميل الكاميرا...',
+  loading: 'تحميل...',
+  capturing: 'التقاط...',
+  imageCaptured: 'تم التقاط الصورة',
+  ofImages: 'من الصور',
+  captureError: 'خطأ في الالتقاط',
+  cameraNotReady: 'الكاميرا غير جاهزة',
+  capture: 'التقاط',
+  startCamera: 'تشغيل الكاميرا',
+  
+  // AI and DeepSec
+  aiAssistant: 'مساعد الذكاء الاصطناعي',
+  deepSecIntegration: 'تكامل DeepSec',
+  realTimeProcessing: 'معالجة فورية',
+  offlineCapable: 'يعمل بدون إنترنت',
+  
+  // Enhanced settings translations  
+  enhancedSettings: 'الإعدادات المتقدمة',
+  languageAndAppearance: 'اللغة والمظهر',
+  advancedAI: 'الذكاء الاصطناعي المتقدم',
+  localDataManagement: 'إدارة البيانات المحلية',
+  systemStatus: 'حالة النظام',
+  backupAndRestore: 'النسخ الاحتياطي والاستعادة',
+  enableDeepSec: 'تمكين DeepSec',
+  aiModels: 'نماذج الذكاء الاصطناعي',
+  manageModels: 'إدارة النماذج',
+  offlineMode: 'الوضع المحلي',
+  active: 'نشط',
+  localDatabase: 'قاعدة البيانات المحلية',
+  connected: 'متصل',
+  aiServices: 'خدمات الذكاء الاصطناعي',
+  ready: 'جاهز',
+  cameraAccess: 'الوصول للكاميرا',
+  available: 'متاح',
+  exportData: 'تصدير البيانات',
+  importData: 'استيراد البيانات',
+  importBackupData: 'استيراد البيانات الاحتياطية'
 };

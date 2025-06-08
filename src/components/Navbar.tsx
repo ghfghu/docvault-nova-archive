@@ -43,7 +43,7 @@ const Navbar = () => {
     { name: t('counter'), path: '/counter', icon: Calculator },
     { name: t('aiTraining'), path: '/ai-training', icon: Brain },
     { name: t('extensions'), path: '/extensions', icon: Puzzle },
-    { name: t('settings'), path: '/settings', icon: Settings },
+    { name: t('settings'), path: '/enhanced-settings', icon: Settings },
   ];
   
   const isActive = (path: string) => location.pathname === path;
@@ -99,7 +99,7 @@ const Navbar = () => {
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-docvault-accent/20" />
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="cursor-pointer">
+                <Link to="/enhanced-settings" className="cursor-pointer">
                   <Settings size={16} className="mr-2" />
                   <span>{t('settings')}</span>
                 </Link>

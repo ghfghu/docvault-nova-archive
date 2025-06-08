@@ -47,9 +47,13 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
         {camera.hasError ? (
           <div className="flex flex-col items-center justify-center h-full text-white p-4">
             <AlertCircle size={48} className="mb-4 text-red-400" />
-            <p className="text-center mb-4">{camera.errorMessage}</p>
-            <Button onClick={camera.startCamera} variant="outline">
-              Try Again
+            <p className="text-center mb-4 text-sm">{camera.errorMessage}</p>
+            <Button 
+              onClick={camera.startCamera}
+              className="bg-docvault-accent hover:bg-docvault-accent/80"
+            >
+              <Camera className="mr-2" size={16} />
+              {t('tryAgain')}
             </Button>
           </div>
         ) : camera.isActive ? (
@@ -63,7 +67,10 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
             />
             {camera.isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                <div className="text-white">Loading camera...</div>
+                <div className="text-white text-center">
+                  <Camera className="mx-auto mb-2 animate-pulse" size={32} />
+                  <p>{t('loadingCamera')}</p>
+                </div>
               </div>
             )}
           </>
@@ -75,7 +82,7 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
               className="bg-docvault-accent hover:bg-docvault-accent/80"
             >
               <Camera className="mr-2" size={18} />
-              {camera.isLoading ? 'Starting...' : t('startCamera')}
+              {camera.isLoading ? t('loading') : t('startCamera')}
             </Button>
           </div>
         )}
@@ -84,26 +91,25 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
       <canvas ref={camera.canvasRef} className="hidden" />
 
       {/* Controls */}
-      {camera.isActive && (
+      {camera.isActive && camera.isReady && (
         <div className="flex justify-center gap-4">
+          {camera.canSwitchCamera && (
+            <Button
+              onClick={camera.switchCamera}
+              variant="outline"
+              className="border-docvault-accent/30"
+            >
+              <RotateCcw size={18} />
+            </Button>
+          )}
+          
           <Button
             onClick={handleCapture}
             disabled={!camera.isReady || isCapturing}
-            className="bg-docvault-accent hover:bg-docvault-accent/80"
+            className="bg-docvault-accent hover:bg-docvault-accent/80 px-8"
           >
             <Camera className="mr-2" size={18} />
-            {isCapturing ? 'Capturing...' : t('capture')}
-          </Button>
-          
-          <Button
-            onClick={() => {
-              camera.stopCamera();
-              setTimeout(camera.startCamera, 500);
-            }}
-            variant="outline"
-            className="border-docvault-accent/30"
-          >
-            <RotateCcw size={18} />
+            {isCapturing ? t('capturing') : t('capture')}
           </Button>
         </div>
       )}

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import Layout from '@/components/Layout';
-import MobileCamera from '@/components/camera/MobileCamera';
+import SimpleCamera from '@/components/camera/SimpleCamera';
 import DocumentForm from '@/components/document/DocumentForm';
 import { useDocumentForm } from '@/hooks/useDocumentForm';
 
@@ -35,7 +35,7 @@ const ScanDocument = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <MobileCamera images={images || []} setImages={setImages} />
+              <SimpleCamera images={images || []} setImages={setImages} />
             </CardContent>
           </Card>
           

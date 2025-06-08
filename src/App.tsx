@@ -14,7 +14,6 @@ import ScanDocument from "./pages/ScanDocument";
 import Documents from "./pages/Documents";
 import WantedPersons from "./pages/WantedPersons";
 import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
 import EnhancedSettings from "./pages/EnhancedSettings";
 import AIManagement from "./pages/AIManagement";
 import Counter from "./pages/Counter";
@@ -41,7 +40,7 @@ const App = () => (
                   <Route path="/documents" element={<Documents />} />
                   <Route path="/wanted" element={<WantedPersons />} />
                   <Route path="/reports" element={<Reports />} />
-                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/settings" element={<EnhancedSettings />} />
                   <Route path="/enhanced-settings" element={<EnhancedSettings />} />
                   <Route path="/ai-management" element={<AIManagement />} />
                   <Route path="/counter" element={<Counter />} />
