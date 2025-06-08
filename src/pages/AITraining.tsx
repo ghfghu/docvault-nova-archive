@@ -4,50 +4,42 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { useLanguage } from '@/context/LanguageContext';
-import Layout from '@/components/Layout';
-import AIChat from '@/components/ai/AIChat';
 import { 
   Brain, 
-  Upload, 
   Play, 
   Pause, 
   Square, 
-  Download,
-  MessageSquare,
+  Download, 
+  Upload,
+  BarChart3,
   Zap,
-  Target,
-  TrendingUp
+  Globe
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import Layout from '@/components/Layout';
+import AdvancedAIChat from '@/components/ai/AdvancedAIChat';
 
 const AITraining = () => {
   const { t, language } = useLanguage();
-  const [selectedModel, setSelectedModel] = useState('document-classifier');
   const [trainingStatus, setTrainingStatus] = useState<'idle' | 'training' | 'paused' | 'completed'>('idle');
   const [progress, setProgress] = useState(0);
-  const [showChat, setShowChat] = useState(true);
+  const [selectedModel, setSelectedModel] = useState('DeepSec-OCR');
 
   const models = [
-    {
-      id: 'document-classifier',
-      name: 'Document Classifier',
-      description: 'Automatically classify document types',
-      accuracy: 94.2,
-      status: 'trained'
+    { 
+      id: 'DeepSec-OCR', 
+      name: language === 'ar' ? 'التعرف الضوئي على النصوص' : 'OCR Recognition',
+      accuracy: 94.5 
     },
-    {
-      id: 'text-extractor',
-      name: 'Text Extractor (OCR)',
-      description: 'Extract text from document images',
-      accuracy: 97.8,
-      status: 'training'
+    { 
+      id: 'DeepSec-Classification', 
+      name: language === 'ar' ? 'تصنيف المستندات' : 'Document Classification',
+      accuracy: 92.8 
     },
-    {
-      id: 'face-detector',
-      name: 'Face Detection',
-      description: 'Detect and identify faces in documents',
-      accuracy: 91.5,
-      status: 'idle'
+    { 
+      id: 'DeepSec-Face', 
+      name: language === 'ar' ? 'التعرف على الوجوه' : 'Face Recognition',
+      accuracy: 96.2 
     }
   ];
 
@@ -57,13 +49,13 @@ const AITraining = () => {
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
-          clearInterval(interval);
           setTrainingStatus('completed');
+          clearInterval(interval);
           return 100;
         }
-        return prev + Math.random() * 5;
+        return prev + Math.random() * 10;
       });
-    }, 500);
+    }, 1000);
   };
 
   const pauseTraining = () => {
@@ -80,188 +72,216 @@ const AITraining = () => {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto animate-fade-in" dir={dir}>
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gradient mb-2">{t('aiTraining')}</h1>
-          <p className="text-docvault-gray">{t('trainCustomModels')}</p>
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold text-gradient flex items-center">
+            <Brain className="mr-2 text-docvault-accent" size={24} />
+            {t('aiTraining')}
+          </h1>
+          <p className="text-docvault-gray text-sm">
+            {language === 'ar' 
+              ? 'تدريب نماذج ذكاء اصطناعي مخصصة للعمل دون اتصال بالإنترنت'
+              : 'Train custom AI models for offline operation'
+            }
+          </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Training Panel */}
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Training Interface */}
+          <div className="space-y-6">
             {/* Model Selection */}
             <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Brain className="mr-2 text-docvault-accent" size={24} />
-                  {t('modelSelection')}
+                  <Zap className="mr-2" size={20} />
+                  {language === 'ar' ? 'اختيار النموذج' : 'Model Selection'}
                 </CardTitle>
-                <CardDescription>{t('selectModel')}</CardDescription>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'اختر نموذج للتدريب'
+                    : 'Select a model to train'
+                  }
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
-                  {models.map((model) => (
-                    <div
-                      key={model.id}
-                      className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                        selectedModel === model.id
-                          ? 'border-docvault-accent bg-docvault-accent/10'
-                          : 'border-docvault-accent/20 hover:border-docvault-accent/40'
-                      }`}
-                      onClick={() => setSelectedModel(model.id)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold">{model.name}</h3>
-                        <Badge variant={
-                          model.status === 'trained' ? 'default' : 
-                          model.status === 'training' ? 'secondary' : 'outline'
-                        }>
-                          {model.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-docvault-gray mb-2">{model.description}</p>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="flex items-center gap-1">
-                          <Target size={14} />
-                          Accuracy: {model.accuracy}%
-                        </span>
-                      </div>
+              <CardContent className="space-y-3">
+                {models.map((model) => (
+                  <div
+                    key={model.id}
+                    className={`p-3 rounded border cursor-pointer transition-colors ${
+                      selectedModel === model.id
+                        ? 'border-docvault-accent bg-docvault-accent/10'
+                        : 'border-docvault-accent/30 hover:border-docvault-accent/50'
+                    }`}
+                    onClick={() => setSelectedModel(model.id)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{model.name}</span>
+                      <Badge variant="outline">
+                        {model.accuracy}% {language === 'ar' ? 'دقة' : 'accuracy'}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
 
             {/* Training Controls */}
             <Card className="glass-card">
               <CardHeader>
-                <CardTitle>{t('trainingProgress')}</CardTitle>
+                <CardTitle>{language === 'ar' ? 'تقدم التدريب' : 'Training Progress'}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>{t('progress')}</span>
+                    <span>{language === 'ar' ? 'التقدم' : 'Progress'}</span>
                     <span>{Math.round(progress)}%</span>
                   </div>
                   <Progress value={progress} className="h-2" />
-                  <div className="flex justify-between text-xs text-docvault-gray">
-                    <span>{t('status')}: {t(trainingStatus)}</span>
-                    <span>ETA: {trainingStatus === 'training' ? '~5 min' : '--'}</span>
-                  </div>
                 </div>
 
-                <div className="flex gap-4">
-                  {trainingStatus === 'idle' && (
-                    <Button onClick={startTraining} className="bg-docvault-accent hover:bg-docvault-accent/80">
+                <div className="flex justify-between items-center text-sm">
+                  <span>{language === 'ar' ? 'الحالة' : 'Status'}</span>
+                  <Badge 
+                    variant={trainingStatus === 'training' ? 'default' : 'outline'}
+                    className={trainingStatus === 'training' ? 'bg-docvault-accent' : ''}
+                  >
+                    {language === 'ar' ? (
+                      trainingStatus === 'idle' ? 'خامل' :
+                      trainingStatus === 'training' ? 'يتدرب' :
+                      trainingStatus === 'paused' ? 'متوقف مؤقتاً' : 'مكتمل'
+                    ) : (
+                      trainingStatus === 'idle' ? 'Idle' :
+                      trainingStatus === 'training' ? 'Training' :
+                      trainingStatus === 'paused' ? 'Paused' : 'Completed'
+                    )}
+                  </Badge>
+                </div>
+
+                <div className="flex gap-2">
+                  {trainingStatus === 'idle' || trainingStatus === 'paused' ? (
+                    <Button 
+                      onClick={startTraining}
+                      className="flex-1 bg-docvault-accent hover:bg-docvault-accent/80"
+                    >
                       <Play className="mr-2" size={16} />
-                      {t('startTraining')}
+                      {trainingStatus === 'paused' ? 
+                        (language === 'ar' ? 'استئناف' : 'Resume') : 
+                        (language === 'ar' ? 'بدء التدريب' : 'Start Training')
+                      }
                     </Button>
-                  )}
+                  ) : trainingStatus === 'training' ? (
+                    <Button 
+                      onClick={pauseTraining}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Pause className="mr-2" size={16} />
+                      {language === 'ar' ? 'إيقاف مؤقت' : 'Pause'}
+                    </Button>
+                  ) : null}
                   
-                  {trainingStatus === 'training' && (
-                    <>
-                      <Button onClick={pauseTraining} variant="outline">
-                        <Pause className="mr-2" size={16} />
-                        {t('pause')}
-                      </Button>
-                      <Button onClick={stopTraining} variant="destructive">
-                        <Square className="mr-2" size={16} />
-                        {t('stop')}
-                      </Button>
-                    </>
-                  )}
-                  
-                  {trainingStatus === 'paused' && (
-                    <>
-                      <Button onClick={startTraining} className="bg-docvault-accent hover:bg-docvault-accent/80">
-                        <Play className="mr-2" size={16} />
-                        Resume
-                      </Button>
-                      <Button onClick={stopTraining} variant="destructive">
-                        <Square className="mr-2" size={16} />
-                        {t('stop')}
-                      </Button>
-                    </>
-                  )}
-                  
-                  {trainingStatus === 'completed' && (
-                    <Button className="bg-green-600 hover:bg-green-700">
-                      <Download className="mr-2" size={16} />
-                      {t('downloadModel')}
+                  {trainingStatus !== 'idle' && (
+                    <Button 
+                      onClick={stopTraining}
+                      variant="destructive"
+                      className="flex-1"
+                    >
+                      <Square className="mr-2" size={16} />
+                      {language === 'ar' ? 'إيقاف' : 'Stop'}
                     </Button>
                   )}
                 </div>
 
-                {/* Training Data Upload */}
-                <div className="border-t border-docvault-accent/20 pt-4">
-                  <h4 className="font-medium mb-4">{t('trainingData')}</h4>
-                  <div className="border-2 border-dashed border-docvault-accent/30 rounded-lg p-6 text-center">
-                    <Upload className="mx-auto mb-2 text-docvault-accent" size={24} />
-                    <p className="text-sm text-docvault-gray mb-2">{t('uploadTrainingData')}</p>
-                    <Button variant="outline" size="sm">
-                      Select Files
-                    </Button>
+                {trainingStatus === 'completed' && (
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    <Download className="mr-2" size={16} />
+                    {language === 'ar' ? 'تحميل النموذج' : 'Download Model'}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Training Data */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Upload className="mr-2" size={20} />
+                  {language === 'ar' ? 'بيانات التدريب' : 'Training Data'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border-2 border-dashed border-docvault-accent/30 rounded-lg p-6 text-center">
+                  <Upload className="mx-auto mb-4 text-docvault-accent" size={32} />
+                  <p className="text-sm text-docvault-gray mb-4">
+                    {language === 'ar' 
+                      ? 'اسحب وأفلت الملفات هنا أو انقر للاختيار'
+                      : 'Drag and drop files here or click to select'
+                    }
+                  </p>
+                  <Button variant="outline" className="border-docvault-accent/30">
+                    {language === 'ar' ? 'اختيار الملفات' : 'Select Files'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Model Performance */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="mr-2" size={20} />
+                  {language === 'ar' ? 'أداء النموذج' : 'Model Performance'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-docvault-accent">94.5%</p>
+                    <p className="text-sm text-docvault-gray">
+                      {language === 'ar' ? 'الدقة' : 'Accuracy'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-docvault-accent">92.1%</p>
+                    <p className="text-sm text-docvault-gray">
+                      {language === 'ar' ? 'الدقة' : 'Precision'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-docvault-accent">89.7%</p>
+                    <p className="text-sm text-docvault-gray">
+                      {language === 'ar' ? 'الاستدعاء' : 'Recall'}
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* AI Chat Sidebar */}
+          {/* AI Assistant */}
           <div className="space-y-6">
-            {/* Chat Toggle */}
-            <Card className="glass-card">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center">
-                    <MessageSquare className="mr-2 text-docvault-accent" size={20} />
-                    AI Assistant
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowChat(!showChat)}
-                  >
-                    {showChat ? 'Hide' : 'Show'}
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-            </Card>
-
-            {/* AI Chat */}
-            {showChat && (
-              <AIChat 
-                context="AI Training"
-                suggestions={[
-                  "How to improve model accuracy?",
-                  "What training data do I need?",
-                  "How long does training take?"
-                ]}
-              />
-            )}
-
-            {/* Model Stats */}
             <Card className="glass-card">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="mr-2 text-docvault-accent" size={20} />
-                  Model Performance
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Globe className="mr-2" size={20} />
+                    {language === 'ar' ? 'مساعد الذكاء الاصطناعي' : 'AI Assistant'}
+                  </div>
+                  <Badge className="bg-docvault-accent">
+                    <Brain className="mr-1" size={12} />
+                    DeepSec
+                  </Badge>
                 </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'تفاعل مع المساعد الذكي متعدد اللغات'
+                    : 'Interact with the multilingual AI assistant'
+                  }
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-docvault-gray">Accuracy</span>
-                    <span className="font-semibold">94.2%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-docvault-gray">Precision</span>
-                    <span className="font-semibold">92.8%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-docvault-gray">Recall</span>
-                    <span className="font-semibold">95.1%</span>
-                  </div>
-                </div>
+              <CardContent className="p-0">
+                <AdvancedAIChat enableDeepSec={true} />
               </CardContent>
             </Card>
           </div>
