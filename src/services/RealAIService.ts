@@ -1,5 +1,5 @@
 
-import { pipeline, Pipeline } from '@huggingface/transformers';
+import { pipeline } from '@huggingface/transformers';
 
 interface AIResponse {
   text: string;
@@ -9,8 +9,8 @@ interface AIResponse {
 }
 
 class RealAIService {
-  private classifier: Pipeline | null = null;
-  private textGenerator: Pipeline | null = null;
+  private classifier: any = null;
+  private textGenerator: any = null;
   private isInitialized = false;
 
   async initialize() {
