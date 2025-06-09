@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -104,3 +105,8 @@ const NavbarContent = () => {
     </>
   );
 };
+
+// Add default export
+const Navbar = () => <NavbarContent />;
+
+export default Navbar;
