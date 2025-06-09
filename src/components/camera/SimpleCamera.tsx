@@ -12,9 +12,11 @@ interface SimpleCameraProps {
 }
 
 const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const camera = useSimpleCamera();
   const [isCapturing, setIsCapturing] = useState(false);
+
+  const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   const handleCapture = async () => {
     setIsCapturing(true);
@@ -41,13 +43,13 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir={dir}>
       {/* Camera View */}
       <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
         {camera.hasError ? (
           <div className="flex flex-col items-center justify-center h-full text-white p-4">
             <AlertCircle size={48} className="mb-4 text-red-400" />
-            <p className="text-center mb-4 text-sm">{camera.errorMessage}</p>
+            <p className="text-center mb-4 text-sm" dir={dir}>{camera.errorMessage}</p>
             <Button 
               onClick={camera.startCamera}
               className="bg-docvault-accent hover:bg-docvault-accent/80"
@@ -69,7 +71,7 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                 <div className="text-white text-center">
                   <Camera className="mx-auto mb-2 animate-pulse" size={32} />
-                  <p>{t('loadingCamera')}</p>
+                  <p dir={dir}>{t('loadingCamera')}</p>
                 </div>
               </div>
             )}

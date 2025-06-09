@@ -131,16 +131,15 @@ export const useSimpleCamera = () => {
     });
   }, [updateState]);
 
-  const switchCamera = useCallback(() => {
+  const switchCamera = useCallback(async () => {
     if (!state.canSwitchCamera) return;
     
     const newFacingMode = state.facingMode === 'environment' ? 'user' : 'environment';
-    updateState({ facingMode: newFacingMode });
     
     if (state.isActive) {
       stopCamera();
+      updateState({ facingMode: newFacingMode });
       setTimeout(() => {
-        updateState({ facingMode: newFacingMode });
         startCamera();
       }, 500);
     }
