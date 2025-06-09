@@ -44,35 +44,31 @@ export const useSimpleCamera = () => {
 
   const startCamera = useCallback(async () => {
     console.log('Starting camera with facingMode:', state.facingMode);
-    updateState({ isLoading: true, hasError: false, errorMessage: '' });
+    updateState({ isLoading: true, hasError: false, errorMessage: '', isReady: false });
     
     try {
       // Check browser support
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera is not supported on this browser');
+        throw new Error('الكاميرا غير مدعومة في هذا المتصفح');
       }
 
-      // Request permissions first
-      const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
-      console.log('Camera permission status:', permissionStatus.state);
-
-      // Stop any existing stream
+      // Stop any existing stream first
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
 
-      // Simple constraints for better compatibility
+      // Simplified constraints for better compatibility
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode: state.facingMode,
-          width: { ideal: 1280, min: 320 },
-          height: { ideal: 720, min: 240 }
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 }
         },
         audio: false
       };
       
-      console.log('Requesting camera access with constraints:', constraints);
+      console.log('Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log('Camera stream obtained successfully');
       
@@ -81,9 +77,9 @@ export const useSimpleCamera = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         
-        // Wait for video to be ready
-        const handleCanPlay = () => {
-          console.log('Video can play, camera is ready');
+        // Wait for video metadata to load
+        const handleLoadedMetadata = () => {
+          console.log('Video metadata loaded');
           updateState({ 
             isActive: true, 
             isLoading: false, 
@@ -92,15 +88,30 @@ export const useSimpleCamera = () => {
             errorMessage: ''
           });
         };
+
+        const handleCanPlay = () => {
+          console.log('Video can play, camera is ready');
+          if (!state.isReady) {
+            updateState({ 
+              isActive: true, 
+              isLoading: false, 
+              isReady: true,
+              hasError: false,
+              errorMessage: ''
+            });
+          }
+        };
         
+        // Add event listeners
+        videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
         videoRef.current.addEventListener('canplay', handleCanPlay, { once: true });
         
         try {
           await videoRef.current.play();
           console.log('Video started playing');
         } catch (playError) {
-          console.error('Error playing video:', playError);
-          // Still mark as ready even if play fails initially
+          console.warn('Auto-play failed, but camera should still work:', playError);
+          // Mark as ready even if autoplay fails
           handleCanPlay();
         }
         
@@ -110,21 +121,21 @@ export const useSimpleCamera = () => {
       }
     } catch (error) {
       console.error('Camera initialization failed:', error);
-      let errorMessage = 'Unable to access camera';
+      let errorMessage = 'غير قادر على الوصول للكاميرا';
       
       if (error instanceof DOMException) {
         switch (error.name) {
           case 'NotAllowedError':
-            errorMessage = 'Camera permission was denied. Please allow camera access in your browser settings and refresh the page.';
+            errorMessage = 'تم رفض إذن الكاميرا. يرجى السماح بالوصول للكاميرا في إعدادات المتصفح وإعادة تحديث الصفحة.';
             break;
           case 'NotFoundError':
-            errorMessage = 'No camera found on this device.';
+            errorMessage = 'لم يتم العثور على كاميرا في هذا الجهاز.';
             break;
           case 'NotReadableError':
-            errorMessage = 'Camera is being used by another application. Please close other apps using the camera.';
+            errorMessage = 'الكاميرا قيد الاستخدام من تطبيق آخر. يرجى إغلاق التطبيقات الأخرى التي تستخدم الكاميرا.';
             break;
           case 'OverconstrainedError':
-            errorMessage = 'Camera constraints cannot be satisfied. Trying with basic settings...';
+            errorMessage = 'إعدادات الكاميرا غير متوافقة. جاري المحاولة بإعدادات أساسية...';
             // Retry with basic constraints
             setTimeout(() => {
               updateState({ facingMode: 'user' });
@@ -132,7 +143,7 @@ export const useSimpleCamera = () => {
             }, 1000);
             return;
           default:
-            errorMessage = `Camera error: ${error.message}`;
+            errorMessage = `خطأ في الكاميرا: ${error.message}`;
         }
       } else if (error instanceof Error) {
         errorMessage = error.message;
@@ -146,7 +157,7 @@ export const useSimpleCamera = () => {
         isReady: false
       });
     }
-  }, [state.facingMode, updateState, checkCameraDevices]);
+  }, [state.facingMode, updateState, checkCameraDevices, state.isReady]);
 
   const stopCamera = useCallback(() => {
     console.log('Stopping camera...');
@@ -213,9 +224,9 @@ export const useSimpleCamera = () => {
         return null;
       }
 
-      // Get video dimensions
-      const videoWidth = video.videoWidth || video.clientWidth || 640;
-      const videoHeight = video.videoHeight || video.clientHeight || 480;
+      // Get video dimensions - ensure they're valid
+      const videoWidth = video.videoWidth || 640;
+      const videoHeight = video.videoHeight || 480;
       
       console.log('Video dimensions:', { videoWidth, videoHeight });
       
@@ -226,8 +237,8 @@ export const useSimpleCamera = () => {
       // Draw the current video frame to canvas
       context.drawImage(video, 0, 0, videoWidth, videoHeight);
       
-      // Convert to data URL
-      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      // Convert to data URL with good quality
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
       console.log('Image captured successfully');
       
       return imageDataUrl;

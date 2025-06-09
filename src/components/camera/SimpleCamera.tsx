@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, RotateCcw, AlertCircle, RefreshCw } from 'lucide-react';
+import { Camera, RotateCcw, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { useSimpleCamera } from '@/hooks/useSimpleCamera';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from '@/hooks/use-toast';
@@ -64,6 +64,11 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
     }, 500);
   };
 
+  const handleStartCamera = () => {
+    console.log('Starting camera manually');
+    camera.startCamera();
+  };
+
   return (
     <div className="space-y-4" dir={dir}>
       {/* Camera View */}
@@ -74,18 +79,24 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
             <p className="text-center mb-4 text-sm" dir={dir}>
               {camera.errorMessage}
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-center">
               <Button 
-                onClick={camera.startCamera}
+                onClick={handleStartCamera}
                 className="bg-docvault-accent hover:bg-docvault-accent/80"
+                disabled={camera.isLoading}
               >
-                <Camera className="mr-2" size={16} />
+                {camera.isLoading ? (
+                  <Loader2 className="mr-2 animate-spin" size={16} />
+                ) : (
+                  <Camera className="mr-2" size={16} />
+                )}
                 {t('tryAgain')}
               </Button>
               <Button 
                 onClick={handleRetryCamera}
                 variant="outline"
                 className="border-docvault-accent/30 text-white"
+                disabled={camera.isLoading}
               >
                 <RefreshCw className="mr-2" size={16} />
                 {t('reset')}
@@ -104,7 +115,7 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
             {(camera.isLoading || !camera.isReady) && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                 <div className="text-white text-center">
-                  <Camera className="mx-auto mb-2 animate-pulse" size={32} />
+                  <Loader2 className="mx-auto mb-2 animate-spin" size={32} />
                   <p dir={dir}>{t('loadingCamera')}</p>
                 </div>
               </div>
@@ -113,11 +124,15 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
         ) : (
           <div className="flex items-center justify-center h-full">
             <Button 
-              onClick={camera.startCamera}
+              onClick={handleStartCamera}
               disabled={camera.isLoading}
               className="bg-docvault-accent hover:bg-docvault-accent/80"
             >
-              <Camera className="mr-2" size={18} />
+              {camera.isLoading ? (
+                <Loader2 className="mr-2 animate-spin" size={18} />
+              ) : (
+                <Camera className="mr-2" size={18} />
+              )}
               {camera.isLoading ? t('loading') : t('startCamera')}
             </Button>
           </div>
@@ -134,6 +149,7 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
               onClick={camera.switchCamera}
               variant="outline"
               className="border-docvault-accent/30"
+              disabled={camera.isLoading}
             >
               <RotateCcw size={18} />
             </Button>
@@ -141,10 +157,14 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
           
           <Button
             onClick={handleCapture}
-            disabled={!camera.isReady || isCapturing}
+            disabled={!camera.isReady || isCapturing || camera.isLoading}
             className="bg-docvault-accent hover:bg-docvault-accent/80 px-8"
           >
-            <Camera className="mr-2" size={18} />
+            {isCapturing ? (
+              <Loader2 className="mr-2 animate-spin" size={18} />
+            ) : (
+              <Camera className="mr-2" size={18} />
+            )}
             {isCapturing ? t('capturing') : t('capture')}
           </Button>
         </div>
