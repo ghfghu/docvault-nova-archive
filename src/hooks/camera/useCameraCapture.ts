@@ -1,16 +1,14 @@
 
-import { useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 
-interface UseCameraCaptureProps {
-  videoRef: React.RefObject<HTMLVideoElement>;
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  videoLoaded: boolean;
-}
+export const useCameraCapture = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-export const useCameraCapture = ({ videoRef, canvasRef, videoLoaded }: UseCameraCaptureProps) => {
-  const captureImage = useCallback((): string | null => {
-    if (!videoRef.current || !canvasRef.current || !videoLoaded) {
-      console.error('Camera not ready for capture');
+  const captureImage = useCallback((videoRef: React.RefObject<HTMLVideoElement>): string | null => {
+    console.log('Attempting to capture image...');
+    
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('Video or canvas ref not available');
       return null;
     }
 
@@ -24,25 +22,28 @@ export const useCameraCapture = ({ videoRef, canvasRef, videoLoaded }: UseCamera
         return null;
       }
 
-      // Set canvas dimensions to match video
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
+      const videoWidth = video.videoWidth || 640;
+      const videoHeight = video.videoHeight || 480;
       
-      console.log(`Capturing image: ${canvas.width}x${canvas.height}`);
+      console.log('Video dimensions:', { videoWidth, videoHeight });
       
-      // Draw video frame to canvas
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
       
-      // Convert to data URL with good quality
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      context.drawImage(video, 0, 0, videoWidth, videoHeight);
+      
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
       console.log('Image captured successfully');
       
-      return dataUrl;
+      return imageDataUrl;
     } catch (error) {
-      console.error('Image capture error:', error);
+      console.error('Error capturing image:', error);
       return null;
     }
-  }, [videoRef, canvasRef, videoLoaded]);
+  }, []);
 
-  return { captureImage };
+  return {
+    canvasRef,
+    captureImage
+  };
 };
