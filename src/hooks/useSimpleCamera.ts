@@ -34,78 +34,116 @@ export const useSimpleCamera = () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('Available video devices:', videoDevices.length);
       return videoDevices.length > 1;
-    } catch {
+    } catch (error) {
+      console.error('Error checking camera devices:', error);
       return false;
     }
   }, []);
 
   const startCamera = useCallback(async () => {
-    console.log('Starting camera...');
+    console.log('Starting camera with facingMode:', state.facingMode);
     updateState({ isLoading: true, hasError: false, errorMessage: '' });
     
     try {
-      // Check if camera devices exist
+      // Check browser support
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera not supported on this device');
+        throw new Error('Camera is not supported on this browser');
       }
 
-      // Simple constraints that work on most devices
-      const constraints = {
+      // Request permissions first
+      const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      console.log('Camera permission status:', permissionStatus.state);
+
+      // Stop any existing stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
+      // Simple constraints for better compatibility
+      const constraints: MediaStreamConstraints = {
         video: {
           facingMode: state.facingMode,
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 }
+          width: { ideal: 1280, min: 320 },
+          height: { ideal: 720, min: 240 }
         },
         audio: false
       };
       
+      console.log('Requesting camera access with constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Camera stream obtained successfully');
+      
       streamRef.current = stream;
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         
-        const handleLoadedMetadata = () => {
-          console.log('Camera ready');
+        // Wait for video to be ready
+        const handleCanPlay = () => {
+          console.log('Video can play, camera is ready');
           updateState({ 
             isActive: true, 
             isLoading: false, 
-            isReady: true 
+            isReady: true,
+            hasError: false,
+            errorMessage: ''
           });
         };
         
-        videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-        await videoRef.current.play();
+        videoRef.current.addEventListener('canplay', handleCanPlay, { once: true });
+        
+        try {
+          await videoRef.current.play();
+          console.log('Video started playing');
+        } catch (playError) {
+          console.error('Error playing video:', playError);
+          // Still mark as ready even if play fails initially
+          handleCanPlay();
+        }
         
         // Check for multiple cameras
         const canSwitch = await checkCameraDevices();
         updateState({ canSwitchCamera: canSwitch });
       }
     } catch (error) {
-      console.error('Camera error:', error);
+      console.error('Camera initialization failed:', error);
       let errorMessage = 'Unable to access camera';
       
       if (error instanceof DOMException) {
         switch (error.name) {
           case 'NotAllowedError':
-            errorMessage = 'Camera permission denied. Please allow camera access and refresh the page.';
+            errorMessage = 'Camera permission was denied. Please allow camera access in your browser settings and refresh the page.';
             break;
           case 'NotFoundError':
             errorMessage = 'No camera found on this device.';
             break;
           case 'NotReadableError':
-            errorMessage = 'Camera is being used by another application.';
+            errorMessage = 'Camera is being used by another application. Please close other apps using the camera.';
             break;
+          case 'OverconstrainedError':
+            errorMessage = 'Camera constraints cannot be satisfied. Trying with basic settings...';
+            // Retry with basic constraints
+            setTimeout(() => {
+              updateState({ facingMode: 'user' });
+              startCamera();
+            }, 1000);
+            return;
           default:
             errorMessage = `Camera error: ${error.message}`;
         }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
       }
       
       updateState({
         isLoading: false,
         hasError: true,
-        errorMessage
+        errorMessage,
+        isActive: false,
+        isReady: false
       });
     }
   }, [state.facingMode, updateState, checkCameraDevices]);
@@ -114,7 +152,10 @@ export const useSimpleCamera = () => {
     console.log('Stopping camera...');
     
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(track => {
+        console.log('Stopping track:', track.kind);
+        track.stop();
+      });
       streamRef.current = null;
     }
     
@@ -132,22 +173,33 @@ export const useSimpleCamera = () => {
   }, [updateState]);
 
   const switchCamera = useCallback(async () => {
-    if (!state.canSwitchCamera) return;
+    if (!state.canSwitchCamera) {
+      console.log('Camera switching not available');
+      return;
+    }
     
+    console.log('Switching camera from', state.facingMode);
     const newFacingMode = state.facingMode === 'environment' ? 'user' : 'environment';
     
-    if (state.isActive) {
-      stopCamera();
+    stopCamera();
+    
+    // Wait a bit before starting with new facing mode
+    setTimeout(() => {
       updateState({ facingMode: newFacingMode });
-      setTimeout(() => {
-        startCamera();
-      }, 500);
-    }
-  }, [state.canSwitchCamera, state.facingMode, state.isActive, updateState, stopCamera, startCamera]);
+      startCamera();
+    }, 500);
+  }, [state.canSwitchCamera, state.facingMode, stopCamera, startCamera, updateState]);
 
   const captureImage = useCallback((): string | null => {
-    if (!videoRef.current || !canvasRef.current || !state.isReady) {
-      console.error('Camera not ready for capture');
+    console.log('Attempting to capture image...');
+    
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('Video or canvas ref not available');
+      return null;
+    }
+
+    if (!state.isReady || !state.isActive) {
+      console.error('Camera not ready for capture', { isReady: state.isReady, isActive: state.isActive });
       return null;
     }
 
@@ -156,25 +208,44 @@ export const useSimpleCamera = () => {
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
       
-      if (!context) return null;
+      if (!context) {
+        console.error('Canvas context not available');
+        return null;
+      }
 
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
+      // Get video dimensions
+      const videoWidth = video.videoWidth || video.clientWidth || 640;
+      const videoHeight = video.videoHeight || video.clientHeight || 480;
       
-      context.drawImage(video, 0, 0);
+      console.log('Video dimensions:', { videoWidth, videoHeight });
       
-      return canvas.toDataURL('image/jpeg', 0.8);
+      // Set canvas size to match video
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+      
+      // Draw the current video frame to canvas
+      context.drawImage(video, 0, 0, videoWidth, videoHeight);
+      
+      // Convert to data URL
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      console.log('Image captured successfully');
+      
+      return imageDataUrl;
     } catch (error) {
-      console.error('Image capture error:', error);
+      console.error('Error capturing image:', error);
       return null;
     }
-  }, [state.isReady]);
+  }, [state.isReady, state.isActive]);
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopCamera();
+      if (streamRef.current) {
+        console.log('Cleaning up camera stream on unmount');
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
     };
-  }, [stopCamera]);
+  }, []);
 
   return {
     videoRef,

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, RotateCcw, AlertCircle } from 'lucide-react';
+import { Camera, RotateCcw, AlertCircle, RefreshCw } from 'lucide-react';
 import { useSimpleCamera } from '@/hooks/useSimpleCamera';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from '@/hooks/use-toast';
@@ -19,27 +19,49 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   const handleCapture = async () => {
+    console.log('Handle capture clicked');
     setIsCapturing(true);
-    const imageData = camera.captureImage();
     
-    if (imageData) {
-      setImages([...images, imageData]);
-      toast({
-        title: t('imageCaptured'),
-        description: `${images.length + 1} ${t('ofImages')}`
-      });
-    } else {
+    try {
+      const imageData = camera.captureImage();
+      
+      if (imageData) {
+        console.log('Image captured, adding to collection');
+        setImages([...images, imageData]);
+        toast({
+          title: t('imageCaptured'),
+          description: `${images.length + 1} ${t('ofImages')}`
+        });
+      } else {
+        console.error('Image capture returned null');
+        toast({
+          title: t('captureError'),
+          description: t('cameraNotReady'),
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error in handleCapture:', error);
       toast({
         title: t('captureError'),
         description: t('cameraNotReady'),
         variant: 'destructive'
       });
+    } finally {
+      setIsCapturing(false);
     }
-    setIsCapturing(false);
   };
 
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
+  };
+
+  const handleRetryCamera = () => {
+    console.log('Retrying camera initialization');
+    camera.stopCamera();
+    setTimeout(() => {
+      camera.startCamera();
+    }, 500);
   };
 
   return (
@@ -49,14 +71,26 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
         {camera.hasError ? (
           <div className="flex flex-col items-center justify-center h-full text-white p-4">
             <AlertCircle size={48} className="mb-4 text-red-400" />
-            <p className="text-center mb-4 text-sm" dir={dir}>{camera.errorMessage}</p>
-            <Button 
-              onClick={camera.startCamera}
-              className="bg-docvault-accent hover:bg-docvault-accent/80"
-            >
-              <Camera className="mr-2" size={16} />
-              {t('tryAgain')}
-            </Button>
+            <p className="text-center mb-4 text-sm" dir={dir}>
+              {camera.errorMessage}
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                onClick={camera.startCamera}
+                className="bg-docvault-accent hover:bg-docvault-accent/80"
+              >
+                <Camera className="mr-2" size={16} />
+                {t('tryAgain')}
+              </Button>
+              <Button 
+                onClick={handleRetryCamera}
+                variant="outline"
+                className="border-docvault-accent/30 text-white"
+              >
+                <RefreshCw className="mr-2" size={16} />
+                {t('reset')}
+              </Button>
+            </div>
           </div>
         ) : camera.isActive ? (
           <>
@@ -67,7 +101,7 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
               muted 
               className="w-full h-full object-cover"
             />
-            {camera.isLoading && (
+            {(camera.isLoading || !camera.isReady) && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                 <div className="text-white text-center">
                   <Camera className="mx-auto mb-2 animate-pulse" size={32} />
@@ -93,7 +127,7 @@ const SimpleCamera = ({ images, setImages }: SimpleCameraProps) => {
       <canvas ref={camera.canvasRef} className="hidden" />
 
       {/* Controls */}
-      {camera.isActive && camera.isReady && (
+      {camera.isActive && camera.isReady && !camera.hasError && (
         <div className="flex justify-center gap-4">
           {camera.canSwitchCamera && (
             <Button

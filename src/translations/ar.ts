@@ -188,4 +188,8 @@ export const arTranslations = {
   addAnotherImage: 'إضافة صورة أخرى',
   enableFlash: 'تفعيل الفلاش',
   disableFlash: 'إلغاء الفلاش',
+  reset: 'إعادة تعيين',
+  cameraPermissionDenied: 'تم رفض إذن الكاميرا. يرجى السماح بالوصول للكاميرا في إعدادات المتصفح.',
+  noCameraFound: 'لم يتم العثور على كاميرا في هذا الجهاز.',
+  cameraInUse: 'الكاميرا قيد الاستخدام من تطبيق آخر. يرجى إغلاق التطبيقات الأخرى.',
 };
