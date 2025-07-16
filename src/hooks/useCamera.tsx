@@ -31,20 +31,35 @@ export const useCamera = (): UseCameraReturn => {
   // Get camera constraints
   const { getCameraConstraints } = useCameraConstraints();
 
-  // Camera stream management
-  const { streamRef, startCamera, stopCamera } = useCameraStream({
-    state,
-    setState: updateState,
-    videoRef,
-    getCameraConstraints
-  });
+  // Camera stream management (fixed interface)
+  const { streamRef, checkCameraDevices, createStream, attachStreamToVideo, stopStream } = useCameraStream();
 
-  // Image capture functionality
-  const { captureImage } = useCameraCapture({
-    videoRef,
-    canvasRef,
-    videoLoaded: state.videoLoaded
-  });
+  // Image capture functionality (fixed interface)
+  const { captureImage: captureImageFromCanvas } = useCameraCapture();
+
+  // Create camera control functions
+  const startCamera = useCallback(async () => {
+    updateState({ cameraInitializing: true });
+    try {
+      const constraints = getCameraConstraints();
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      await attachStreamToVideo(stream);
+      updateState({ cameraActive: true, cameraInitializing: false });
+    } catch (error) {
+      console.error('Camera start failed:', error);
+      updateState({ cameraInitializing: false });
+    }
+  }, [getCameraConstraints, streamRef, attachStreamToVideo, updateState]);
+
+  const stopCameraFunction = useCallback(() => {
+    stopStream();
+    updateState({ cameraActive: false, videoLoaded: false });
+  }, [stopStream, updateState]);
+
+  const captureImage = useCallback(() => {
+    return captureImageFromCanvas(videoRef);
+  }, [captureImageFromCanvas, videoRef]);
 
   // Flash/torch functionality
   const { toggleFlash } = useCameraFlash({
@@ -57,11 +72,11 @@ export const useCamera = (): UseCameraReturn => {
   // Reset camera functionality
   const resetCamera = useCallback(() => {
     console.log('Resetting camera...');
-    stopCamera();
+    stopCameraFunction();
     setTimeout(() => {
       startCamera();
     }, 500);
-  }, [stopCamera, startCamera]);
+  }, [stopCameraFunction, startCamera]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -81,7 +96,7 @@ export const useCamera = (): UseCameraReturn => {
     flashSupported: state.flashSupported,
     flashEnabled: state.flashEnabled,
     startCamera,
-    stopCamera,
+    stopCamera: stopCameraFunction,
     captureImage,
     toggleFlash,
     resetCamera
