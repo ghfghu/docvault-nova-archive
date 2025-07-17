@@ -1,8 +1,5 @@
 
-// AI Services
-import { DocumentAIService, VoiceAIService } from './ai/AIService';
-export { DocumentAIService, VoiceAIService } from './ai/AIService';
-export type { AIModel, AIRequest, AIResponse, DocumentAnalysisResult } from './ai/types';
+// AI Services removed - project now uses SQLite database only
 
 // External Module System
 import { ModuleManager, moduleManager } from './external/ModuleManager';
@@ -23,10 +20,6 @@ export type { Extension, ExtensionHook } from './extensions/ExtensionRegistry';
 
 // Future-ready exports for easy integration
 export const DevFeatures = {
-  ai: {
-    DocumentAIService,
-    VoiceAIService
-  },
   platform: {
     manager: platformManager,
     WebAdapter

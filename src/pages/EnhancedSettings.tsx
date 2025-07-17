@@ -206,23 +206,20 @@ const EnhancedSettings = () => {
               <Separator className="bg-docvault-accent/20" />
               
               <div className="flex items-center justify-between">
-                <Label htmlFor="dark-mode" className="flex items-center">
-                  {settings.darkMode ? <Moon className="mr-2" size={16} /> : <Sun className="mr-2" size={16} />}
-                  {t('darkMode')}
-                </Label>
+                <Label htmlFor="auto-save">{t('autoSave') || 'Auto Save'}</Label>
                 <Switch
-                  id="dark-mode"
-                  checked={settings.darkMode}
-                  onCheckedChange={(checked) => updateSettings({ darkMode: checked })}
+                  id="auto-save"
+                  checked={settings.autoSave}
+                  onCheckedChange={(checked) => updateSettings({ autoSave: checked })}
                 />
               </div>
               
               <div className="flex items-center justify-between">
-                <Label htmlFor="onboarding">{t('showOnboarding')}</Label>
+                <Label htmlFor="backup">{t('backupEnabled') || 'Backup Enabled'}</Label>
                 <Switch
-                  id="onboarding"
-                  checked={settings.showOnboarding}
-                  onCheckedChange={(checked) => updateSettings({ showOnboarding: checked })}
+                  id="backup"
+                  checked={settings.backupEnabled}
+                  onCheckedChange={(checked) => updateSettings({ backupEnabled: checked })}
                 />
               </div>
             </CardContent>

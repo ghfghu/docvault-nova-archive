@@ -15,9 +15,7 @@ import Documents from "./pages/Documents";
 import WantedPersons from "./pages/WantedPersons";
 import Reports from "./pages/Reports";
 import EnhancedSettings from "./pages/EnhancedSettings";
-import AIManagement from "./pages/AIManagement";
 import Counter from "./pages/Counter";
-import AITraining from "./pages/AITraining";
 import Extensions from "./pages/Extensions";
 import NotFound from "./pages/NotFound";
 
@@ -42,9 +40,7 @@ const App = () => (
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<EnhancedSettings />} />
                   <Route path="/enhanced-settings" element={<EnhancedSettings />} />
-                  <Route path="/ai-management" element={<AIManagement />} />
                   <Route path="/counter" element={<Counter />} />
-                  <Route path="/ai-training" element={<AITraining />} />
                   <Route path="/extensions" element={<Extensions />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

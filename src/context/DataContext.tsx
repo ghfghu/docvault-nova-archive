@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DocumentData } from '@/types/camera';
 import { generateSampleDocuments } from '@/sample-data';
-import { localDatabase } from '@/services/LocalDatabase';
+import { sqliteDatabase } from '@/services/SQLiteDatabase';
 
 // Define types for documents and wanted persons
 export interface Document extends DocumentData {
@@ -20,13 +19,11 @@ export interface WantedPerson {
 }
 
 export interface Settings {
-  darkMode: boolean;
-  language: 'en' | 'es' | 'fr';
-  showOnboarding: boolean;
-  enableAutoFill: boolean;
-  enableAssistantTips: boolean;
-  offlineMode: boolean;
-  aiProcessingEnabled: boolean;
+  theme: 'light' | 'dark' | 'system';
+  language: 'en' | 'ar';
+  autoSave: boolean;
+  maxFileSize: number;
+  backupEnabled: boolean;
 }
 
 // Define the context type
@@ -53,13 +50,11 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // Default settings
 const defaultSettings: Settings = {
-  darkMode: true,
-  language: 'en',
-  showOnboarding: true,
-  enableAutoFill: true,
-  enableAssistantTips: true,
-  offlineMode: true,
-  aiProcessingEnabled: true
+  theme: 'system',
+  language: 'ar',
+  autoSave: true,
+  maxFileSize: 10485760,
+  backupEnabled: true
 };
 
 // Provider component
@@ -69,34 +64,50 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize local database and load data
+  // Initialize SQLite database and load data
   useEffect(() => {
     const initializeData = async () => {
       try {
         setIsLoading(true);
         
-        // Initialize local database
-        await localDatabase.initialize();
-        console.log('Local database initialized');
+        // Initialize SQLite database
+        await sqliteDatabase.initialize();
+        console.log('SQLite database initialized successfully');
 
         // Load documents
-        const storedDocuments = await localDatabase.getAllDocuments();
-        setDocuments(storedDocuments);
-        console.log(`Loaded ${storedDocuments.length} documents from local database`);
+        const storedDocuments = await sqliteDatabase.getAllDocuments();
+        const convertedDocuments = storedDocuments.map(doc => ({
+          id: doc.id,
+          name: doc.title,
+          type: doc.type,
+          date: doc.created_at,
+          priority: 1,
+          notes: doc.content,
+          viewingTag: doc.tags?.[0],
+          images: doc.images,
+          createdAt: doc.created_at
+        }));
+        setDocuments(convertedDocuments);
+        console.log(`Loaded ${convertedDocuments.length} documents from SQLite database`);
 
         // Load wanted persons
-        const storedWantedPersons = await localDatabase.getAllWantedPersons();
-        setWantedPersons(storedWantedPersons);
-        console.log(`Loaded ${storedWantedPersons.length} wanted persons from local database`);
+        const storedWantedPersons = await sqliteDatabase.getAllWantedPersons();
+        const convertedPersons = storedWantedPersons.map(person => ({
+          ...person,
+          fullName: person.name,
+          documentNumber: '',
+          notes: person.description,
+          createdAt: person.created_at
+        }));
+        setWantedPersons(convertedPersons);
+        console.log(`Loaded ${convertedPersons.length} wanted persons from SQLite database`);
 
         // Load settings
-        const storedSettings = await localDatabase.getSettings();
-        if (storedSettings) {
-          setSettings({ ...defaultSettings, ...storedSettings });
-        }
+        const storedSettings = await sqliteDatabase.getSettings();
+        setSettings(storedSettings);
 
       } catch (error) {
-        console.error('Error initializing data:', error);
+        console.error('Error initializing SQLite data:', error);
         // Fallback to localStorage if database fails
         try {
           const documentsFromStorage = localStorage.getItem('docvault_documents');
@@ -128,9 +139,20 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     try {
-      await localDatabase.addDocument(newDocument);
+      const sqliteDoc = {
+        id: newDocument.id,
+        title: newDocument.name || 'Untitled Document',
+        type: newDocument.type || 'other',
+        content: newDocument.notes || '',
+        tags: newDocument.viewingTag ? [newDocument.viewingTag] : [],
+        created_at: newDocument.createdAt,
+        updated_at: newDocument.createdAt,
+        images: newDocument.images || []
+      };
+      
+      await sqliteDatabase.addDocument(sqliteDoc);
       setDocuments(prevDocuments => [...prevDocuments, newDocument]);
-      console.log('Document added to local database');
+      console.log('Document added to SQLite database');
     } catch (error) {
       console.error('Failed to add document to database:', error);
       // Fallback to state only
@@ -141,9 +163,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Delete a document
   const deleteDocument = async (id: string) => {
     try {
-      await localDatabase.deleteDocument(id);
+      await sqliteDatabase.deleteDocument(id);
       setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== id));
-      console.log('Document deleted from local database');
+      console.log('Document deleted from SQLite database');
     } catch (error) {
       console.error('Failed to delete document from database:', error);
       // Fallback to state only
@@ -160,9 +182,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     try {
-      await localDatabase.addWantedPerson(newPerson);
+      const sqlitePerson = {
+        id: newPerson.id,
+        name: newPerson.fullName,
+        description: newPerson.notes || '',
+        image: newPerson.photo,
+        created_at: newPerson.createdAt,
+        updated_at: newPerson.createdAt
+      };
+      
+      await sqliteDatabase.addWantedPerson(sqlitePerson);
       setWantedPersons(prevPersons => [...prevPersons, newPerson]);
-      console.log('Wanted person added to local database');
+      console.log('Wanted person added to SQLite database');
     } catch (error) {
       console.error('Failed to add wanted person to database:', error);
       setWantedPersons(prevPersons => [...prevPersons, newPerson]);
@@ -178,13 +209,22 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     try {
-      await localDatabase.updateWantedPerson(id, updatedPerson);
+      const sqlitePerson = {
+        id: updatedPerson.id,
+        name: updatedPerson.fullName,
+        description: updatedPerson.notes || '',
+        image: updatedPerson.photo,
+        created_at: updatedPerson.createdAt,
+        updated_at: new Date().toISOString()
+      };
+      
+      await sqliteDatabase.addWantedPerson(sqlitePerson); // SQLite uses INSERT OR REPLACE
       setWantedPersons(prevPersons => 
         prevPersons.map(person => 
           person.id === id ? updatedPerson : person
         )
       );
-      console.log('Wanted person updated in local database');
+      console.log('Wanted person updated in SQLite database');
     } catch (error) {
       console.error('Failed to update wanted person in database:', error);
       setWantedPersons(prevPersons => 
@@ -198,9 +238,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Delete a wanted person
   const deleteWantedPerson = async (id: string) => {
     try {
-      await localDatabase.deleteWantedPerson(id);
+      await sqliteDatabase.deleteWantedPerson(id);
       setWantedPersons(prevPersons => prevPersons.filter(person => person.id !== id));
-      console.log('Wanted person deleted from local database');
+      console.log('Wanted person deleted from SQLite database');
     } catch (error) {
       console.error('Failed to delete wanted person from database:', error);
       setWantedPersons(prevPersons => prevPersons.filter(person => person.id !== id));
@@ -210,14 +250,16 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Clear all data
   const clearAllData = async () => {
     try {
-      await localDatabase.clearAllData();
+      await sqliteDatabase.clearAllData();
       setDocuments([]);
       setWantedPersons([]);
-      console.log('All data cleared from local database');
+      setSettings(defaultSettings);
+      console.log('All data cleared from SQLite database');
     } catch (error) {
       console.error('Failed to clear data from database:', error);
       setDocuments([]);
       setWantedPersons([]);
+      setSettings(defaultSettings);
     }
   };
   
@@ -233,16 +275,38 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     
     const sampleWantedPersons = generateSampleWantedPersons(25);
     
-    // Save to database and update state
+    // Convert and save to SQLite database
     Promise.all([
-      ...sampleDocuments.map(doc => localDatabase.addDocument(doc)),
-      ...sampleWantedPersons.map(person => localDatabase.addWantedPerson(person))
+      ...sampleDocuments.map(doc => {
+        const sqliteDoc = {
+          id: doc.id,
+          title: doc.title || 'Sample Document',
+          type: doc.type || 'other',
+          content: doc.description || '',
+          tags: doc.tags || [],
+          created_at: doc.createdAt,
+          updated_at: doc.createdAt,
+          images: doc.images || []
+        };
+        return sqliteDatabase.addDocument(sqliteDoc);
+      }),
+      ...sampleWantedPersons.map(person => {
+        const sqlitePerson = {
+          id: person.id,
+          name: person.fullName,
+          description: person.notes || '',
+          image: person.photo,
+          created_at: person.createdAt,
+          updated_at: person.createdAt
+        };
+        return sqliteDatabase.addWantedPerson(sqlitePerson);
+      })
     ]).then(() => {
       setDocuments(sampleDocuments);
       setWantedPersons(sampleWantedPersons);
       console.log(`Loaded ${sampleDocuments.length} sample documents and ${sampleWantedPersons.length} wanted persons`);
     }).catch(error => {
-      console.error('Failed to save sample data to database:', error);
+      console.error('Failed to save sample data to SQLite database:', error);
       setDocuments(sampleDocuments);
       setWantedPersons(sampleWantedPersons);
     });
@@ -260,16 +324,38 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     
     const largeWantedPersons = generateSampleWantedPersons(50);
     
-    // Save to database and update state
+    // Convert and save to SQLite database
     Promise.all([
-      ...largeDocuments.map(doc => localDatabase.addDocument(doc)),
-      ...largeWantedPersons.map(person => localDatabase.addWantedPerson(person))
+      ...largeDocuments.map(doc => {
+        const sqliteDoc = {
+          id: doc.id,
+          title: doc.title || 'Large Dataset Document',
+          type: doc.type || 'other',
+          content: doc.description || '',
+          tags: doc.tags || [],
+          created_at: doc.createdAt,
+          updated_at: doc.createdAt,
+          images: doc.images || []
+        };
+        return sqliteDatabase.addDocument(sqliteDoc);
+      }),
+      ...largeWantedPersons.map(person => {
+        const sqlitePerson = {
+          id: person.id,
+          name: person.fullName,
+          description: person.notes || '',
+          image: person.photo,
+          created_at: person.createdAt,
+          updated_at: person.createdAt
+        };
+        return sqliteDatabase.addWantedPerson(sqlitePerson);
+      })
     ]).then(() => {
       setDocuments(largeDocuments);
       setWantedPersons(largeWantedPersons);
       console.log(`Loaded ${largeDocuments.length} documents and ${largeWantedPersons.length} wanted persons for stress testing`);
     }).catch(error => {
-      console.error('Failed to save large dataset to database:', error);
+      console.error('Failed to save large dataset to SQLite database:', error);
       setDocuments(largeDocuments);
       setWantedPersons(largeWantedPersons);
     });
@@ -278,9 +364,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Export data as JSON
   const exportData = async (): Promise<string> => {
     try {
-      return await localDatabase.exportData();
+      return await sqliteDatabase.exportData();
     } catch (error) {
-      console.error('Failed to export from database:', error);
+      console.error('Failed to export from SQLite database:', error);
       // Fallback to current state
       const data = {
         documents,
@@ -295,20 +381,39 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   // Import data from JSON
   const importData = async (jsonData: string): Promise<boolean> => {
     try {
-      const success = await localDatabase.importData(jsonData);
+      const success = await sqliteDatabase.importData(jsonData);
       if (success) {
-        // Reload data from database
+        // Reload data from SQLite database
         const [newDocuments, newPersons, newSettings] = await Promise.all([
-          localDatabase.getAllDocuments(),
-          localDatabase.getAllWantedPersons(),
-          localDatabase.getSettings()
+          sqliteDatabase.getAllDocuments(),
+          sqliteDatabase.getAllWantedPersons(),
+          sqliteDatabase.getSettings()
         ]);
         
-        setDocuments(newDocuments);
-        setWantedPersons(newPersons);
-        if (newSettings) {
-          setSettings({ ...defaultSettings, ...newSettings });
-        }
+        // Convert SQLite format to app format
+        const convertedDocuments = newDocuments.map(doc => ({
+          id: doc.id,
+          name: doc.title,
+          type: doc.type,
+          date: doc.created_at,
+          priority: 1,
+          notes: doc.content,
+          viewingTag: doc.tags?.[0],
+          images: doc.images,
+          createdAt: doc.created_at
+        }));
+        
+        const convertedPersons = newPersons.map(person => ({
+          ...person,
+          fullName: person.name,
+          documentNumber: '',
+          notes: person.description,
+          createdAt: person.created_at
+        }));
+        
+        setDocuments(convertedDocuments);
+        setWantedPersons(convertedPersons);
+        setSettings(newSettings);
       }
       return success;
     } catch (error) {
@@ -325,11 +430,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     try {
-      await localDatabase.updateSettings(updatedSettings);
+      await sqliteDatabase.updateSettings(updatedSettings);
       setSettings(updatedSettings);
-      console.log('Settings updated in local database');
+      console.log('Settings updated in SQLite database');
     } catch (error) {
-      console.error('Failed to update settings in database:', error);
+      console.error('Failed to update settings in SQLite database:', error);
       setSettings(updatedSettings);
     }
   };

@@ -172,33 +172,18 @@ const Settings = () => {
               <CardDescription>Customize your offline app experience</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="dark-mode" className="flex items-center">
-                  {settings.darkMode ? <Moon className="mr-2" size={16} /> : <Sun className="mr-2" size={16} />}
-                  Dark Mode
-                </Label>
-                <Switch
-                  id="dark-mode"
-                  checked={settings.darkMode}
-                  onCheckedChange={(checked) => updateSettings({ darkMode: checked })}
-                />
-              </div>
-              
-              <Separator className="bg-docvault-accent/20" />
-              
               <div className="space-y-2">
                 <Label htmlFor="language">Language</Label>
                 <Select 
                   value={settings.language} 
-                  onValueChange={(value) => updateSettings({ language: value as any })}
+                  onValueChange={(value) => updateSettings({ language: value as 'en' | 'ar' })}
                 >
                   <SelectTrigger className="bg-docvault-dark/50 border-docvault-accent/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="fr">Français</SelectItem>
+                    <SelectItem value="ar">العربية</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -206,73 +191,25 @@ const Settings = () => {
               <Separator className="bg-docvault-accent/20" />
               
               <div className="flex items-center justify-between">
-                <Label htmlFor="onboarding">Show Onboarding</Label>
+                <Label htmlFor="auto-save">Auto Save</Label>
                 <Switch
-                  id="onboarding"
-                  checked={settings.showOnboarding}
-                  onCheckedChange={(checked) => updateSettings({ showOnboarding: checked })}
+                  id="auto-save"
+                  checked={settings.autoSave}
+                  onCheckedChange={(checked) => updateSettings({ autoSave: checked })}
                 />
               </div>
               
               <div className="flex items-center justify-between">
-                <Label htmlFor="autofill">Enable Auto-fill</Label>
+                <Label htmlFor="backup">Backup Enabled</Label>
                 <Switch
-                  id="autofill"
-                  checked={settings.enableAutoFill}
-                  onCheckedChange={(checked) => updateSettings({ enableAutoFill: checked })}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <Label htmlFor="ai-processing">AI Processing</Label>
-                <Switch
-                  id="ai-processing"
-                  checked={settings.aiProcessingEnabled}
-                  onCheckedChange={(checked) => updateSettings({ aiProcessingEnabled: checked })}
+                  id="backup"
+                  checked={settings.backupEnabled}
+                  onCheckedChange={(checked) => updateSettings({ backupEnabled: checked })}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* AI Management */}
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Brain className="mr-2" size={20} />
-                AI Management
-              </CardTitle>
-              <CardDescription>
-                Manage your offline AI models and training
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-sm text-docvault-gray">
-                <p>Train custom models for:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Document classification</li>
-                  <li>Text extraction (OCR)</li>
-                  <li>Face recognition</li>
-                  <li>Custom pattern detection</li>
-                </ul>
-              </div>
-              
-              <Button 
-                onClick={() => navigate('/ai-management')}
-                className="w-full bg-docvault-accent hover:bg-docvault-accent/80"
-              >
-                <Brain className="mr-2" size={16} />
-                Open AI Management
-              </Button>
-              
-              <div className="text-xs text-docvault-gray bg-docvault-dark/30 p-3 rounded">
-                <div className="flex items-center mb-1">
-                  <Smartphone className="mr-1" size={12} />
-                  Fully Offline Operation
-                </div>
-                <p>All AI processing happens locally on your device. No internet required.</p>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Data Management */}
           <Card className="glass-card">
@@ -356,10 +293,6 @@ const Settings = () => {
                   <span className="text-green-400 text-sm font-medium">Connected</span>
                 </div>
                 
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">AI Services</span>
-                  <span className="text-green-400 text-sm font-medium">Ready</span>
-                </div>
                 
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Camera Access</span>
@@ -442,7 +375,7 @@ const Settings = () => {
               </div>
               <div>
                 <h4 className="font-medium text-docvault-accent mb-1">Storage</h4>
-                <p className="text-docvault-gray">Local SQLite + IndexedDB</p>
+                <p className="text-docvault-gray">SQLite Database</p>
               </div>
             </div>
           </CardContent>
